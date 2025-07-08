@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>360° Scene Editor</title>
+    <link rel="stylesheet" href="/styles/scene-editor.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Libertinus+Mono&family=Fira+Sans&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="page">
+      <header class="header">
+        <h1>360° Scene Editor</h1>
+        <nav>
+          <a href="index.html">Back to Main Portal</a>
+        </nav>
+      </header>
+
+      <div class="scene-controls">
+        <input type="file" id="panoramaInput" accept="image/jpeg, image/png" />
+
+        <button class="btn" id="export360">Export 360°</button>
+        <button class="btn" id="exportCurrentView">Export Current View</button>
+      </div>
+
+      <div id="scene-container">
+        <p>Loading 3D scene...</p>
+      </div>
+    </div>
+    
+    <script type="module" src="/src/scene-editor.ts"></script>
+    </body>
+</html>
