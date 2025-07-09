@@ -16,8 +16,6 @@ interface Hotspot {
   };
 }
 
-// let isDragging = false;
-
 const hotspotData: Hotspot[] = [];
 const mouse = new THREE.Vector2();
 const raycaster = new THREE.Raycaster();
@@ -35,25 +33,23 @@ let sphereMesh: THREE.Mesh;
 let controls: OrbitControls;
 let labelRenderer: CSS2DRenderer;
 
-// let loader = new THREE.TextureLoader();
-
 // When user clicks on any of the elements on this page
 document.addEventListener("DOMContentLoaded", () => {
-  //  check mouse for click vs drag 
+  //  check mouse for click vs drag
   let mouseDownPos: { x: number; y: number } | null = null;
   let mouseMoved = false;
 
   // container to load the image
   const container = document.getElementById("scene-container") as HTMLElement;
-  
+
   // actual file that being uploaded
   const fileInput = document.getElementById(
     "panoramaInput"
   ) as HTMLInputElement;
 
-  // button to export 360
+  // button to export 360 (json with info about hotspots)
   const export360Btn = document.getElementById("export360");
-  
+
   // button to export current view
   const exportCurrentViewBtn = document.getElementById("exportCurrentView");
 
@@ -116,7 +112,14 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!frustum.containsPoint(pos)) return; // point isnt visible
 
         // 3d position to 2d position
+        // Project the 3d position into normalized coordinaces.
+        // Afrer projection posScene.x and .y are between [-1, 1]
+        // -1,-1 is bottom left and 1,1 is top right of screen
         const posScene = pos.clone().project(camera);
+
+        // convert the normalized coordinates to screen pixels
+        // this formula converts from [-1,1] to [0,1]
+        // -1 => 0 ; 0 => 0.5 ; 1 => 1
         const x = (posScene.x * 0.5 + 0.5) * width;
         const y = (1 - (posScene.y * 0.5 + 0.5)) * height;
 
@@ -143,16 +146,6 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     sceneImg.src = sceneURL;
   });
-
-  // renderer.render(scene, camera);
-  // renderer.domElement.toBlob((blob) => {
-  //     if (!blob) return;
-  //     const url = URL.createObjectURL(blob);
-  //     const link = document.createElement('a');
-  //     link.href = url;
-  //     link.download = 'current-view.png';
-  //     link.click();
-  // }, 'image/png')
 
   let selectedHotspotType: "shield" | "sword" = "shield";
 
@@ -187,7 +180,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // loads the image on the page
     container.appendChild(renderer.domElement);
 
-
+    // mouse move drag controls
     controls = new OrbitControls(camera, renderer.domElement);
     controls.minDistance = 10;
     controls.maxDistance = 80;
@@ -216,12 +209,14 @@ document.addEventListener("DOMContentLoaded", () => {
       mouseMoved = false;
     });
 
+    // labels 
     labelRenderer = new CSS2DRenderer();
     labelRenderer.setSize(container.clientWidth, container.clientHeight);
     labelRenderer.domElement.style.position = "absolute";
     labelRenderer.domElement.style.top = "0";
     labelRenderer.domElement.style.left = "0";
     labelRenderer.domElement.style.pointerEvents = "none";
+    
     container.appendChild(labelRenderer.domElement);
 
     animate();
@@ -236,24 +231,28 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function handleFileUpload() {
+    // get the first file upload
     const file = fileInput.files?.[0];
     if (!file) return;
 
     console.log("File selected:", file.name, file.type);
 
-    const reader = new FileReader();
+    const reader = new FileReader(); 
     reader.onload = function (event) {
+      // data url representing the image's file
       const imageUrl = event.target?.result as string;
 
       console.log("Image loaded as URL");
       applyPanoramaImage(imageUrl);
     };
+    
+    // if we have error reading the file
     reader.onerror = function (err) {
       console.error("FileReader error:", err);
     };
 
     console.log("READING FILE IMG!!");
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(file); 
   }
 
   function applyPanoramaImage(imageSrc: string) {
@@ -268,24 +267,25 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // container.innerHTML = ""; // hide loading 3d scene
-
     container.classList.add("visible"); // show img container
 
-    // resize renderer and camera
+    // resize renderer and camera (get size of container)
     const width = container.clientWidth;
     const height = container.clientHeight;
-    renderer.setSize(width, height);
-    camera.aspect = width / height;
+    
+    renderer.setSize(width, height); // resize to fix container
+    camera.aspect = width / height; // update camera aspect to match the new size
     camera.updateProjectionMatrix();
 
+    // load the img 
     const loader = new THREE.TextureLoader().load(imageSrc, () => {
       if (sphereMesh) scene.remove(sphereMesh);
 
       console.log("Texture loaded");
 
+      // creating the space for image (500 radius, 60,40 - width/height)
       const geometry = new THREE.SphereGeometry(500, 60, 40);
-      geometry.scale(-1, 1, 1);
+      geometry.scale(-1, 1, 1); // visualisation from inside (x axis)
 
       const material = new THREE.MeshBasicMaterial({ map: loader });
       sphereMesh = new THREE.Mesh(geometry, material);
@@ -302,19 +302,19 @@ document.addEventListener("DOMContentLoaded", () => {
   function onSceneClick(event: MouseEvent) {
     if (!sphereMesh) return;
 
+    // rectangle of the renderers canvas - map mouse coords 
     const rect = renderer.domElement.getBoundingClientRect();
+
+    // convert mouse position to normalized coords
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
+    // create ray to the scene by mouse pointer
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObject(sphereMesh);
     if (intersects.length === 0) return;
 
-    const point = intersects[0].point;
-
-    // Ask user which icon to place (🛡 or ⚔)
-    // const type = prompt("Type 'shield' or 'sword':")?.toLowerCase();
-    // if (type !== 'shield' && type !== 'sword') return;
+    const point = intersects[0].point; // point of 3d coords on sphere surface
 
     const id = crypto.randomUUID();
     const label = selectedHotspotType === "shield" ? "🛡" : "⚔";
@@ -327,18 +327,23 @@ document.addEventListener("DOMContentLoaded", () => {
     label: string,
     position: THREE.Vector3
   ) {
+    // create new div for hotspot marker
     const div = document.createElement("div");
     div.className = "hotspot";
+    
+    // created span with class for style and update icons
     div.innerHTML = `<span class="icon">${
       type === "shield" ? "🛡" : "⚔"
     }</span>`;
     div.title = label;
 
+
     if (type === "sword") {
       div.addEventListener("click", (e) => {
+        // prevent editing if the icon is locked
         if (div.hasAttribute("data-locked")) return;
 
-        e.stopPropagation();
+        e.stopPropagation(); // disable option for clicking on it
 
         // Show edit popup next to the icon
         const popup = document.getElementById("icon-edit-popup")!;
@@ -353,13 +358,14 @@ document.addEventListener("DOMContentLoaded", () => {
           const newIcon = target.dataset.icon;
           if (!newIcon) return;
 
+          // update hotspots icon
           div.querySelector(".icon")!.textContent = newIcon;
           div.title = newIcon;
           div.setAttribute("data-locked", "true");
 
           popup.classList.add("hidden");
 
-          // Clean up
+          // remove the event listener
           popup.querySelectorAll("button").forEach((btn) => {
             btn.removeEventListener("click", handler);
           });
@@ -378,14 +384,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const labelObj = new CSS2DObject(div);
     labelObj.position.copy(position.clone().add(new THREE.Vector3(0, -25, 0)));
     scene.add(labelObj);
-
-    // const geometry = new THREE.SphereGeometry(5, 8, 8);
-    // const material = new THREE.MeshBasicMaterial({
-    // color: type === 'shield' ? 0x00ffff : 0xff3333,
-    // });
-    // const marker = new THREE.Mesh(geometry, material);
-    // marker.position.copy(position);
-    // scene.add(marker);
 
     hotspotData.push({
       id,
