@@ -1,0 +1,84 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --color-bg: #2c3498;
+  --color-primary: #91a9f8;
+  --color-secondary: #f2ffff;
+  --color-accent: #f6c667;
+
+  --font-title: "Libertinus Mono", monospace;
+  --font-body: "Work Sans", sans-serif;
+}
+
+
+body {
+  background-color: var(--color-bg);
+  font-family: var(--font-body);
+  color: var(--color-secondary);
+  line-height: 1.6;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+h1, h2 {
+  font-family: var(--font-title);
+  color: var(--color-accent);
+  margin-bottom: 1rem;
+}
+
+h1 {
+  font-size: 3rem;
+}
+
+h2 {
+  font-size: 2rem;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+nav {
+  font-weight: 600;
+  color: var(--color-accent);
+  margin-top: 30px;
+}
+
+
+.page {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  height: 100vh;
+}
+
+.buttons {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  background-color: var(--color-primary);
+  color: var(--color-secondary);
+  padding: 1rem 2rem;
+  border: none;
+  text-decoration: none;
+  font-weight: bold;
+  border-radius: 8px;
+  transition: background 0.3s;
+}
+
+.btn:hover {
+  background-color: var(--color-accent);
+  color: var(--color-bg);
+}

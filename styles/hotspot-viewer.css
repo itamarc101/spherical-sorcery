@@ -1,0 +1,99 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --color-bg: #2c3498;
+  --color-primary: #91a9f8;
+  --color-secondary: #f2ffff;
+  --color-accent: #f6c667;
+
+  --font-title: "Libertinus Mono", monospace;
+  --font-body: "Work Sans", sans-serif;
+}
+
+body {
+  background-color: var(--color-bg);
+  font-family: var(--font-body);
+  color: var(--color-secondary);
+  line-height: 1.6;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  height: 100vh;
+}
+
+h1 {
+  font-family: var(--font-title);
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: var(--color-accent);
+}
+
+h2 {
+  font-family: var(--font-title);
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: var(--color-accent);
+}
+
+.input-group {
+    margin-top: 1rem;
+    align-items: center;
+}
+
+.image-display-container {
+    position: relative; 
+    max-width: 90%;
+    max-height: 70vh;
+    overflow: hidden;
+    margin: 20px auto;
+    border: 1px solid var(--color-accent);
+}
+
+#viewerImage {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+#hotspot-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.cheat-grid-controller {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.cheat-grid-controller button {
+    padding: 15px;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+nav {
+    font-weight: 600;
+    color: var(--color-accent);
+    margin-top: 30px;
+}
