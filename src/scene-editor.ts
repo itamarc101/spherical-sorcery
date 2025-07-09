@@ -16,6 +16,8 @@ interface Hotspot {
   };
 }
 
+let currentEditingHotspot: HTMLElement | null = null;
+
 const hotspotData: Hotspot[] = [];
 const mouse = new THREE.Vector2();
 const raycaster = new THREE.Raycaster();
@@ -286,8 +288,19 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function onSceneClick(event: MouseEvent) {
+    const popup = document.getElementById("icon-edit-popup");
+    
+    // if popup is open, close to avoid adding new hotspot
+    if (popup && !popup.classList.contains("hidden")) {
+      // Close popup and cancel adding new hotspot
+      popup.classList.add("hidden");
+      currentEditingHotspot = null;
+      return;
+    }
+
     if (!sphereMesh) return;
 
+    // convert mouse click to normalize coords 
     const rect = renderer.domElement.getBoundingClientRect();
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -326,7 +339,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Show edit popup next to the icon
         const popup = document.getElementById("icon-edit-popup")!;
+        
+        // remove popup if open and click again
+        if (popup && !popup.classList.contains("hidden")) {
+          popup.classList.add("hidden");
+          currentEditingHotspot = null;
+          return;
+        }
         popup.classList.remove("hidden");
+
+        currentEditingHotspot = div;
 
         // Position popup near mouse
         popup.style.left = `${e.clientX + 10}px`;
@@ -335,12 +357,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const handler = (ev: MouseEvent) => {
           const target = ev.target as HTMLElement;
           const newIcon = target.dataset.icon;
-          if (!newIcon) return;
+          if (!newIcon || !currentEditingHotspot) return;
 
-          div.querySelector(".icon")!.textContent = newIcon;
+          currentEditingHotspot.querySelector(".icon")!.textContent = newIcon;
 
           // update label based on the new icon
-          const labelElement = div.querySelector(".label")! as HTMLElement;
+          const labelElement = currentEditingHotspot.querySelector(
+            ".label"
+          )! as HTMLElement;
           let newLabel: string;
           if (newIcon === "🛡") {
             newLabel = "Shield";
@@ -355,8 +379,9 @@ document.addEventListener("DOMContentLoaded", () => {
           div.setAttribute("data-locked", "true");
 
           popup.classList.add("hidden");
+          currentEditingHotspot = null;
 
-          // Clean up
+          // Clean up remove all event listeners
           popup.querySelectorAll("button").forEach((btn) => {
             btn.removeEventListener("click", handler);
           });
@@ -389,4 +414,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
     console.log(`Hotspot added: ${type}`, position);
   }
+
+  // close popup if click outside 
+  document.addEventListener("click", (e) => {
+    const popup = document.getElementById("icon-edit-popup");
+    if (!popup) return;
+
+    // check if click was inside popup or on existing hotspot
+    const isInsidePopup = popup.contains(e.target as Node);
+    const isHotspot = (e.target as HTMLElement).closest(".hotspot");
+
+    // if click was outside -> hide popup and reset editing hotspot
+    if (!isInsidePopup && !isHotspot) {
+      popup.classList.add("hidden");
+      currentEditingHotspot = null;
+    }
+  });
 });
