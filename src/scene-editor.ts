@@ -289,7 +289,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function onSceneClick(event: MouseEvent) {
     const popup = document.getElementById("icon-edit-popup");
-    
+
     // if popup is open, close to avoid adding new hotspot
     if (popup && !popup.classList.contains("hidden")) {
       // Close popup and cancel adding new hotspot
@@ -300,7 +300,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!sphereMesh) return;
 
-    // convert mouse click to normalize coords 
+    // convert mouse click to normalize coords
     const rect = renderer.domElement.getBoundingClientRect();
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -339,56 +339,50 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Show edit popup next to the icon
         const popup = document.getElementById("icon-edit-popup")!;
-        
-        // remove popup if open and click again
-        if (popup && !popup.classList.contains("hidden")) {
+        if (!popup) return;
+
+        // hide popup if already visible
+        if (!popup.classList.contains("hidden")) {
           popup.classList.add("hidden");
           currentEditingHotspot = null;
           return;
         }
-        popup.classList.remove("hidden");
+
+        // clean old event handlers by cloning buttons
+        const oldButtons = popup.querySelectorAll("button");
+        oldButtons.forEach((btn) => {
+          const newBtn = btn.cloneNode(true);
+          btn.replaceWith(newBtn);
+        });
 
         currentEditingHotspot = div;
 
-        // Position popup near mouse
         popup.style.left = `${e.clientX + 10}px`;
         popup.style.top = `${e.clientY + 10 + window.scrollY}px`;
+        popup.classList.remove("hidden");
 
-        const handler = (ev: MouseEvent) => {
-          const target = ev.target as HTMLElement;
-          const newIcon = target.dataset.icon;
-          if (!newIcon || !currentEditingHotspot) return;
+        // add handler to the *new* buttons
+        const newButtons = popup.querySelectorAll("button");
+        newButtons.forEach((btn) => {
+          btn.addEventListener("click", (ev) => {
+            const target = ev.target as HTMLElement;
+            const newIcon = target.dataset.icon;
+            if (!newIcon || !currentEditingHotspot) return;
 
-          currentEditingHotspot.querySelector(".icon")!.textContent = newIcon;
+            currentEditingHotspot.querySelector(".icon")!.textContent = newIcon;
 
-          // update label based on the new icon
-          const labelElement = currentEditingHotspot.querySelector(
-            ".label"
-          )! as HTMLElement;
-          let newLabel: string;
-          if (newIcon === "🛡") {
-            newLabel = "Shield";
-          } else if (newIcon === "⚔") {
-            newLabel = "Sword";
-          } else {
-            newLabel = "NA";
-          }
-          labelElement.textContent = newLabel;
-          div.title = newLabel;
+            const labelElement = currentEditingHotspot.querySelector(".label")!;
+            let newLabel =
+              newIcon === "🛡" ? "Shield" : newIcon === "⚔" ? "Sword" : "NA";
 
-          div.setAttribute("data-locked", "true");
+            labelElement.textContent = newLabel;
+            div.title = newLabel;
 
-          popup.classList.add("hidden");
-          currentEditingHotspot = null;
+            div.setAttribute("data-locked", "true");
 
-          // Clean up remove all event listeners
-          popup.querySelectorAll("button").forEach((btn) => {
-            btn.removeEventListener("click", handler);
+            popup.classList.add("hidden");
+            currentEditingHotspot = null;
           });
-        };
-
-        popup.querySelectorAll("button").forEach((btn) => {
-          btn.addEventListener("click", handler);
         });
       });
     }
@@ -415,7 +409,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log(`Hotspot added: ${type}`, position);
   }
 
-  // close popup if click outside 
+  // close popup if click outside
   document.addEventListener("click", (e) => {
     const popup = document.getElementById("icon-edit-popup");
     if (!popup) return;

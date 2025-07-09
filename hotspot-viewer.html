@@ -1,48 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <link rel="stylesheet" href="/styles/hotspot-viewer.css">    
+  <head>
+    <link rel="stylesheet" href="/styles/hotspot-viewer.css" />
     <link
       href="https://fonts.googleapis.com/css2?family=Libertinus+Mono&family=Fira+Sans&display=swap"
       rel="stylesheet"
     />
     <script type="module" src="/src/hotspot-viewer.ts"></script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>2D Hotspot Viewer</title>
-</head>
-<body>
+  </head>
+  <body>
     <div class="page">
-        <h1>2D Hotspot Viewer</h1>
-        <p>Upload a screenshot and hotspot file to view and adjust 2D hotspot positions.</p>
-        
-        <div class="input-group">
-            <input type="file" id="imageInput" accept="image/*">
-            <input type="file" id="jsonInput" accept="application/json" >
-        </div>
+      <h1>2D Hotspot Viewer</h1>
+      <p>
+        Upload a screenshot and hotspot file to view and adjust 2D hotspot
+        positions.
+      </p>
 
-        <div class="image-display-container">
-            <img id="viewerImage" src="" alt="Hotspot View">
-            <div id="hotspot-overlay"></div>
-        </div>
+      <div class="input-group">
+        <input type="file" id="imageInput" accept="image/*" />
+        <input type="file" id="jsonInput" accept="application/json" />
+      </div>
 
-        <h2>Cheat Grid Controller</h2>
-        <div class="cheat-grid-controller">
-            <button data-row="0" data-col="0">1</button>
-            <button data-row="0" data-col="1">2</button>
-            <button data-row="0" data-col="2">3</button>
-            <button data-row="1" data-col="0">4</button>
-            <button data-row="1" data-col="1">5</button>
-            <button data-row="1" data-col="2">6</button>
-            <button data-row="2" data-col="0">7</button>
-            <button data-row="2" data-col="1">8</button>
-            <button data-row="2" data-col="2">9</button>
-        </div>
+      <div class="image-display-container">
+        <img id="viewerImage" src="" alt="Hotspot View" />
+        <div id="hotspot-overlay"></div>
+      </div>
 
-        <nav>
-            <a href="index.html">Back to Main Portal</a>
-        </nav>
+      <h2>Cheat Grid Controller</h2>
+      <div class="cheat-grid-controller">
+        <button data-row="0" data-col="0">1</button>
+        <button data-row="0" data-col="1">2</button>
+        <button data-row="0" data-col="2">3</button>
+        <button data-row="1" data-col="0">4</button>
+        <button data-row="1" data-col="1">5</button>
+        <button data-row="1" data-col="2">6</button>
+        <button data-row="2" data-col="0">7</button>
+        <button data-row="2" data-col="1">8</button>
+        <button data-row="2" data-col="2">9</button>
+      </div>
 
+      <nav>
+        <a href="index.html">Back to Main Portal</a>
+      </nav>
     </div>
-</body>
+  </body>
 </html>
