@@ -26,10 +26,14 @@ body {
   min-height: 80vh;
 }
 
+
+
 .hotspot-selector {
   display: flex;
   gap: 1rem;
   padding: 1rem 2rem;
+  justify-content: center;
+  align-items: center;
 }
 
 .hotspot-selector button {
@@ -44,6 +48,57 @@ body {
 }
 
 .hotspot-selector button:hover {
+  background: var(--color-accent);
+  color: var(--color-bg)
+}
+
+
+.hotspot {
+  background: var(--color-bg);
+  padding: 3px 3px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: bold;
+  display: inline-block;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  pointer-events: auto;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease;
+  color: var(--color-secondary);
+}
+
+.hotspot:hover {
+  background: var(--color-accent);
+  color: var(--color-bg);
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+#icon-edit-popup {
+  position: absolute;
+  z-index: 100;
+  display: flex;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 10px 15px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  pointer-events: auto;
+}
+
+#icon-edit-popup.hidden {
+  display: none;
+}
+
+#icon-edit-popup button {
+  font-size: 1.4rem;
+  background: var(--color-primary);
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+#icon-edit-popup button:hover {
   background: var(--color-accent);
 }
 
