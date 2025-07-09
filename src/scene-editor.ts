@@ -39,8 +39,13 @@ let labelRenderer: CSS2DRenderer;
 
 // When user clicks on any of the elements on this page
 document.addEventListener("DOMContentLoaded", () => {
+  //  check mouse for click vs drag 
+  let mouseDownPos: { x: number; y: number } | null = null;
+  let mouseMoved = false;
+
   // container to load the image
   const container = document.getElementById("scene-container") as HTMLElement;
+  
   // actual file that being uploaded
   const fileInput = document.getElementById(
     "panoramaInput"
@@ -48,8 +53,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // button to export 360
   const export360Btn = document.getElementById("export360");
+  
   // button to export current view
-  // const exportCurrentViewBtn = document.getElementById('exportCurrentView');
+  const exportCurrentViewBtn = document.getElementById("exportCurrentView");
 
   console.log("scene-container and file input!");
 
@@ -57,6 +63,96 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // If user changes the input image
   fileInput?.addEventListener("change", handleFileUpload);
+
+  export360Btn?.addEventListener("click", () => {
+    console.log("Clicked on export 360");
+    const json = JSON.stringify(hotspotData, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "hotspots.json";
+    link.click();
+  });
+
+  exportCurrentViewBtn?.addEventListener("click", () => {
+    console.log("clicked on export current");
+
+    // render scene to img
+    renderer.render(scene, camera);
+    const sceneURL = renderer.domElement.toDataURL("image/png");
+
+    // arrange canvas with visible hotspots
+    const width = renderer.domElement.width;
+    const height = renderer.domElement.height;
+    const exportCanvas = document.createElement("canvas");
+    exportCanvas.width = width;
+    exportCanvas.height = height;
+    const ctx = exportCanvas.getContext("2d")!;
+
+    // 3d scene
+    const sceneImg = new window.Image();
+    sceneImg.onload = () => {
+      ctx.drawImage(sceneImg, 0, 0, width, height);
+
+      // show only visible hotspots
+      const frustum = new THREE.Frustum();
+      const screenMatrix = new THREE.Matrix4();
+
+      camera.updateMatrixWorld();
+      camera.updateProjectionMatrix();
+      screenMatrix.multiplyMatrices(
+        camera.projectionMatrix,
+        camera.matrixWorldInverse
+      );
+      frustum.setFromProjectionMatrix(screenMatrix);
+
+      hotspotData.forEach((hotspot) => {
+        const pos = new THREE.Vector3(
+          hotspot.position.x,
+          hotspot.position.y,
+          hotspot.position.z
+        );
+        if (!frustum.containsPoint(pos)) return; // point isnt visible
+
+        // 3d position to 2d position
+        const posScene = pos.clone().project(camera);
+        const x = (posScene.x * 0.5 + 0.5) * width;
+        const y = (1 - (posScene.y * 0.5 + 0.5)) * height;
+
+        // draw icon on the position
+        ctx.font = "32px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.strokeStyle = "#222";
+        ctx.lineWidth = 4;
+        ctx.strokeText(hotspot.label, x, y);
+        ctx.fillStyle = "#fff";
+        ctx.fillText(hotspot.label, x, y);
+      });
+
+      //export
+      exportCanvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "current-view.png";
+        link.click();
+      }, "image/png");
+    };
+    sceneImg.src = sceneURL;
+  });
+
+  // renderer.render(scene, camera);
+  // renderer.domElement.toBlob((blob) => {
+  //     if (!blob) return;
+  //     const url = URL.createObjectURL(blob);
+  //     const link = document.createElement('a');
+  //     link.href = url;
+  //     link.download = 'current-view.png';
+  //     link.click();
+  // }, 'image/png')
 
   let selectedHotspotType: "shield" | "sword" = "shield";
 
@@ -77,11 +173,6 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-  // click on 360
-  export360Btn?.addEventListener("click", () => {
-    console.log("Clicked on export 360");
-  });
-
   function initScene(container: HTMLElement) {
     console.log("INSIDE INIT SCENE");
     scene = new THREE.Scene();
@@ -96,16 +187,40 @@ document.addEventListener("DOMContentLoaded", () => {
     // loads the image on the page
     container.appendChild(renderer.domElement);
 
+
     controls = new OrbitControls(camera, renderer.domElement);
     controls.minDistance = 10;
     controls.maxDistance = 80;
 
-    renderer.domElement.addEventListener("click", onSceneClick);
+    // mouse down: record position
+    renderer.domElement.addEventListener("mousedown", (e) => {
+      mouseDownPos = { x: e.clientX, y: e.clientY };
+      mouseMoved = false;
+    });
+    // mouse move: detect drag
+    renderer.domElement.addEventListener("mousemove", (e) => {
+      if (mouseDownPos) {
+        const dx = e.clientX - mouseDownPos.x;
+        const dy = e.clientY - mouseDownPos.y;
+        if (Math.sqrt(dx * dx + dy * dy) > 5) {
+          mouseMoved = true;
+        }
+      }
+    });
+    // mouse up: shuold be  click if not dragged
+    renderer.domElement.addEventListener("mouseup", (e) => {
+      if (mouseDownPos && !mouseMoved) {
+        onSceneClick(e);
+      }
+      mouseDownPos = null;
+      mouseMoved = false;
+    });
 
     labelRenderer = new CSS2DRenderer();
     labelRenderer.setSize(container.clientWidth, container.clientHeight);
     labelRenderer.domElement.style.position = "absolute";
     labelRenderer.domElement.style.top = "0";
+    labelRenderer.domElement.style.left = "0";
     labelRenderer.domElement.style.pointerEvents = "none";
     container.appendChild(labelRenderer.domElement);
 
@@ -115,6 +230,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function animate() {
     requestAnimationFrame(animate);
+    controls.update();
     renderer.render(scene, camera);
     labelRenderer.render(scene, camera);
   }
@@ -151,8 +267,12 @@ document.addEventListener("DOMContentLoaded", () => {
       console.warn("scene-container not found!");
       return;
     }
-    container.classList.add("visible");
 
+    // container.innerHTML = ""; // hide loading 3d scene
+
+    container.classList.add("visible"); // show img container
+
+    // resize renderer and camera
     const width = container.clientWidth;
     const height = container.clientHeight;
     renderer.setSize(width, height);
@@ -228,7 +348,6 @@ document.addEventListener("DOMContentLoaded", () => {
         popup.style.left = `${e.clientX + 10}px`;
         popup.style.top = `${e.clientY + 10 + window.scrollY}px`;
 
-        
         const handler = (ev: MouseEvent) => {
           const target = ev.target as HTMLElement;
           const newIcon = target.dataset.icon;
@@ -279,6 +398,6 @@ document.addEventListener("DOMContentLoaded", () => {
       },
     });
 
-    console.log(`🛠 Hotspot added: ${type}`, position);
+    console.log(`Hotspot added: ${type}`, position);
   }
 });

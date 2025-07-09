@@ -15,6 +15,7 @@
     "vite": "^7.0.3"
   },
   "dependencies": {
+    "html2canvas": "^1.4.1",
     "three": "^0.178.0"
   }
 }
