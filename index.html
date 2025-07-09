@@ -14,15 +14,34 @@
 
   <body>
     <main class="portal">
-      <h1>Spherical Sorcery</h1>
-      <p class="description">
-        Welcome, sorcerer! This tool lets you create and view magical hotspots
-        in a 360° realm.
-      </p>
+      <header class="header">
+        <h1>Spherical Sorcery</h1>
+        <p class="description">
+          Welcome, sorcerer! This tool lets you create and view magical hotspots
+          in a 360° realm.
+        </p>
+      </header>
       
       <div class="buttons">
-        <a href="/scene-editor.html" class="btn">Enter 360° Scene Editor</a>
-        <a href="/hotspot-viewer.html" class="btn">Enter 2D Hotspot Viewer</a>
+        <div class="page-card">
+          <p>Upload panoramic image and create hotspot in 3D image.</p>
+          <p>Export the location of the hotspots and also take snapshot of part of the space.</p>
+          <ul>
+            <li>🛡 Shield hotspots with immutable labels</li>
+            <li>⚔ Sword hotspots are editable labels only once</li>
+            <li>Full 360° mouse navigation</li>
+          </ul>
+          <a href="/scene-editor.html" id="page-button" class="btn">Enter 360° Scene Editor</a>
+        </div>
+
+        <div class="page-card">
+          <p>View and adjust hotspot on 2d images</p>
+          <ul>
+            <li>Responsive image scaling</li>
+            <li>Draggable hotspot adjustment</li>
+            <li>9-grid region controller</li>
+          </ul>
+          <a href="/hotspot-viewer.html" id="page-button" class="btn">Enter 2D Hotspot Viewer</a>
       </div>
     </main>
     <script type="module" src="/src/main.ts"></script>
