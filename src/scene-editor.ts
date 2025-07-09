@@ -4,6 +4,7 @@ import {
   CSS2DRenderer,
   CSS2DObject,
 } from "three/examples/jsm/renderers/CSS2DRenderer.js";
+import html2canvas from "html2canvas";
 
 interface Hotspot {
   id: string;
@@ -15,6 +16,8 @@ interface Hotspot {
     z: number;
   };
 }
+
+// let isDragging = false;
 
 const hotspotData: Hotspot[] = [];
 const mouse = new THREE.Vector2();
@@ -33,23 +36,19 @@ let sphereMesh: THREE.Mesh;
 let controls: OrbitControls;
 let labelRenderer: CSS2DRenderer;
 
+// let loader = new THREE.TextureLoader();
+
 // When user clicks on any of the elements on this page
 document.addEventListener("DOMContentLoaded", () => {
-  //  check mouse for click vs drag
-  let mouseDownPos: { x: number; y: number } | null = null;
-  let mouseMoved = false;
-
   // container to load the image
   const container = document.getElementById("scene-container") as HTMLElement;
-
   // actual file that being uploaded
   const fileInput = document.getElementById(
     "panoramaInput"
   ) as HTMLInputElement;
 
-  // button to export 360 (json with info about hotspots)
+  // button to export 360
   const export360Btn = document.getElementById("export360");
-
   // button to export current view
   const exportCurrentViewBtn = document.getElementById("exportCurrentView");
 
@@ -74,77 +73,30 @@ document.addEventListener("DOMContentLoaded", () => {
   exportCurrentViewBtn?.addEventListener("click", () => {
     console.log("clicked on export current");
 
-    // render scene to img
-    renderer.render(scene, camera);
-    const sceneURL = renderer.domElement.toDataURL("image/png");
-
-    // arrange canvas with visible hotspots
-    const width = renderer.domElement.width;
-    const height = renderer.domElement.height;
-    const exportCanvas = document.createElement("canvas");
-    exportCanvas.width = width;
-    exportCanvas.height = height;
-    const ctx = exportCanvas.getContext("2d")!;
-
-    // 3d scene
-    const sceneImg = new window.Image();
-    sceneImg.onload = () => {
-      ctx.drawImage(sceneImg, 0, 0, width, height);
-
-      // show only visible hotspots
-      const frustum = new THREE.Frustum();
-      const screenMatrix = new THREE.Matrix4();
-
-      camera.updateMatrixWorld();
-      camera.updateProjectionMatrix();
-      screenMatrix.multiplyMatrices(
-        camera.projectionMatrix,
-        camera.matrixWorldInverse
-      );
-      frustum.setFromProjectionMatrix(screenMatrix);
-
-      hotspotData.forEach((hotspot) => {
-        const pos = new THREE.Vector3(
-          hotspot.position.x,
-          hotspot.position.y,
-          hotspot.position.z
-        );
-        if (!frustum.containsPoint(pos)) return; // point isnt visible
-
-        // 3d position to 2d position
-        // Project the 3d position into normalized coordinaces.
-        // Afrer projection posScene.x and .y are between [-1, 1]
-        // -1,-1 is bottom left and 1,1 is top right of screen
-        const posScene = pos.clone().project(camera);
-
-        // convert the normalized coordinates to screen pixels
-        // this formula converts from [-1,1] to [0,1]
-        // -1 => 0 ; 0 => 0.5 ; 1 => 1
-        const x = (posScene.x * 0.5 + 0.5) * width;
-        const y = (1 - (posScene.y * 0.5 + 0.5)) * height;
-
-        // draw icon on the position
-        ctx.font = "32px sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.strokeStyle = "#222";
-        ctx.lineWidth = 4;
-        ctx.strokeText(hotspot.label, x, y);
-        ctx.fillStyle = "#fff";
-        ctx.fillText(hotspot.label, x, y);
-      });
-
-      //export
-      exportCanvas.toBlob((blob) => {
+    const renderContainer = document.getElementById("render-container") as HTMLElement;
+    html2canvas(renderContainer, {
+      useCORS: true,
+      backgroundColor: null,
+    }).then((canvas) => {
+      canvas.toBlob((blob) => {
         if (!blob) return;
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
         link.download = "current-view.png";
         link.click();
-      }, "image/png");
-    };
-    sceneImg.src = sceneURL;
+      });
+    });
+
+    // renderer.render(scene, camera);
+    // renderer.domElement.toBlob((blob) => {
+    //     if (!blob) return;
+    //     const url = URL.createObjectURL(blob);
+    //     const link = document.createElement('a');
+    //     link.href = url;
+    //     link.download = 'current-view.png';
+    //     link.click();
+    // }, 'image/png')
   });
 
   let selectedHotspotType: "shield" | "sword" = "shield";
@@ -180,43 +132,18 @@ document.addEventListener("DOMContentLoaded", () => {
     // loads the image on the page
     container.appendChild(renderer.domElement);
 
-    // mouse move drag controls
     controls = new OrbitControls(camera, renderer.domElement);
     controls.minDistance = 10;
     controls.maxDistance = 80;
 
-    // mouse down: record position
-    renderer.domElement.addEventListener("mousedown", (e) => {
-      mouseDownPos = { x: e.clientX, y: e.clientY };
-      mouseMoved = false;
-    });
-    // mouse move: detect drag
-    renderer.domElement.addEventListener("mousemove", (e) => {
-      if (mouseDownPos) {
-        const dx = e.clientX - mouseDownPos.x;
-        const dy = e.clientY - mouseDownPos.y;
-        if (Math.sqrt(dx * dx + dy * dy) > 5) {
-          mouseMoved = true;
-        }
-      }
-    });
-    // mouse up: shuold be  click if not dragged
-    renderer.domElement.addEventListener("mouseup", (e) => {
-      if (mouseDownPos && !mouseMoved) {
-        onSceneClick(e);
-      }
-      mouseDownPos = null;
-      mouseMoved = false;
-    });
+    renderer.domElement.addEventListener("click", onSceneClick);
 
-    // labels 
     labelRenderer = new CSS2DRenderer();
     labelRenderer.setSize(container.clientWidth, container.clientHeight);
     labelRenderer.domElement.style.position = "absolute";
     labelRenderer.domElement.style.top = "0";
     labelRenderer.domElement.style.left = "0";
     labelRenderer.domElement.style.pointerEvents = "none";
-    
     container.appendChild(labelRenderer.domElement);
 
     animate();
@@ -231,28 +158,24 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function handleFileUpload() {
-    // get the first file upload
     const file = fileInput.files?.[0];
     if (!file) return;
 
     console.log("File selected:", file.name, file.type);
 
-    const reader = new FileReader(); 
+    const reader = new FileReader();
     reader.onload = function (event) {
-      // data url representing the image's file
       const imageUrl = event.target?.result as string;
 
       console.log("Image loaded as URL");
       applyPanoramaImage(imageUrl);
     };
-    
-    // if we have error reading the file
     reader.onerror = function (err) {
       console.error("FileReader error:", err);
     };
 
     console.log("READING FILE IMG!!");
-    reader.readAsDataURL(file); 
+    reader.readAsDataURL(file);
   }
 
   function applyPanoramaImage(imageSrc: string) {
@@ -267,25 +190,24 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // container.innerHTML = ""; // hide loading 3d scene
+
     container.classList.add("visible"); // show img container
 
-    // resize renderer and camera (get size of container)
+    // resize renderer and camera
     const width = container.clientWidth;
     const height = container.clientHeight;
-    
-    renderer.setSize(width, height); // resize to fix container
-    camera.aspect = width / height; // update camera aspect to match the new size
+    renderer.setSize(width, height);
+    camera.aspect = width / height;
     camera.updateProjectionMatrix();
 
-    // load the img 
     const loader = new THREE.TextureLoader().load(imageSrc, () => {
       if (sphereMesh) scene.remove(sphereMesh);
 
       console.log("Texture loaded");
 
-      // creating the space for image (500 radius, 60,40 - width/height)
       const geometry = new THREE.SphereGeometry(500, 60, 40);
-      geometry.scale(-1, 1, 1); // visualisation from inside (x axis)
+      geometry.scale(-1, 1, 1);
 
       const material = new THREE.MeshBasicMaterial({ map: loader });
       sphereMesh = new THREE.Mesh(geometry, material);
@@ -302,22 +224,23 @@ document.addEventListener("DOMContentLoaded", () => {
   function onSceneClick(event: MouseEvent) {
     if (!sphereMesh) return;
 
-    // rectangle of the renderers canvas - map mouse coords 
     const rect = renderer.domElement.getBoundingClientRect();
-
-    // convert mouse position to normalized coords
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-    // create ray to the scene by mouse pointer
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObject(sphereMesh);
     if (intersects.length === 0) return;
 
-    const point = intersects[0].point; // point of 3d coords on sphere surface
+    const point = intersects[0].point;
+
+    // Ask user which icon to place (🛡 or ⚔)
+    // const type = prompt("Type 'shield' or 'sword':")?.toLowerCase();
+    // if (type !== 'shield' && type !== 'sword') return;
 
     const id = crypto.randomUUID();
-    const label = selectedHotspotType === "shield" ? "🛡" : "⚔";
+    const label = selectedHotspotType === "shield" ? "Shield" : "Sword"; // Changed this line
+    // const label = selectedHotspotType === "shield" ? "🛡" : "⚔";
     addHotspot(id, selectedHotspotType, label, point);
   }
 
@@ -327,23 +250,19 @@ document.addEventListener("DOMContentLoaded", () => {
     label: string,
     position: THREE.Vector3
   ) {
-    // create new div for hotspot marker
     const div = document.createElement("div");
     div.className = "hotspot";
-    
-    // created span with class for style and update icons
-    div.innerHTML = `<span class="icon">${
-      type === "shield" ? "🛡" : "⚔"
-    }</span>`;
+    div.innerHTML = `
+      <span class="icon">${type === "shield" ? "🛡" : "⚔"}</span>
+      <span class="label">${label}</span>
+    `;
     div.title = label;
-
 
     if (type === "sword") {
       div.addEventListener("click", (e) => {
-        // prevent editing if the icon is locked
         if (div.hasAttribute("data-locked")) return;
 
-        e.stopPropagation(); // disable option for clicking on it
+        e.stopPropagation();
 
         // Show edit popup next to the icon
         const popup = document.getElementById("icon-edit-popup")!;
@@ -358,14 +277,28 @@ document.addEventListener("DOMContentLoaded", () => {
           const newIcon = target.dataset.icon;
           if (!newIcon) return;
 
-          // update hotspots icon
           div.querySelector(".icon")!.textContent = newIcon;
-          div.title = newIcon;
+
+          // update label based on the new icon
+          const labelElement = div.querySelector(".label")! as HTMLElement;
+          let newLabel: string;
+          if (newIcon === "🛡") {
+              newLabel = "Shield";
+          } 
+          else if (newIcon === "⚔") {
+              newLabel = "Sword";
+          }
+          else {
+            newLabel = "NA";
+          }
+          labelElement.textContent = newLabel;
+          div.title = newLabel;
+
           div.setAttribute("data-locked", "true");
 
           popup.classList.add("hidden");
 
-          // remove the event listener
+          // Clean up
           popup.querySelectorAll("button").forEach((btn) => {
             btn.removeEventListener("click", handler);
           });
@@ -384,6 +317,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const labelObj = new CSS2DObject(div);
     labelObj.position.copy(position.clone().add(new THREE.Vector3(0, -25, 0)));
     scene.add(labelObj);
+
+    // const geometry = new THREE.SphereGeometry(5, 8, 8);
+    // const material = new THREE.MeshBasicMaterial({
+    // color: type === 'shield' ? 0x00ffff : 0xff3333,
+    // });
+    // const marker = new THREE.Mesh(geometry, material);
+    // marker.position.copy(position);
+    // scene.add(marker);
 
     hotspotData.push({
       id,
