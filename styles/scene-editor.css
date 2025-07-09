@@ -30,7 +30,10 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  height: 100vh;
+  /* width: 100%; */
+  max-width: 1200px;
+  height: 100%;
+  padding:1rem;
 }
 
 .header {
@@ -39,8 +42,9 @@ body {
   flex-direction: column;
   /* justify-content: center; */
   align-items: center;
+  text-align: center;
   flex-wrap: wrap;
-  /* gap: 5rem; */
+  gap: 1rem;
 }
 
 h1 {
@@ -54,6 +58,7 @@ h1 {
   display: flex;
   gap: 1.5rem;
   flex-wrap: wrap;
+  justify-content: center;
 }
 
 .btn {
@@ -112,3 +117,42 @@ nav {
 #scene-container.visible {
   display: block;
 }
+
+/* Mobile Responsive */
+@media (max-width: 599px) {
+  h1 {
+    font-size: 2rem;
+  }
+
+  .buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .btn,
+  input[type="file"] {
+    width: 100%;
+    text-align: center;
+  }
+
+  .header {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 899px) {
+  h1 {
+    font-size: 2.4rem;
+  }
+
+  .buttons {
+    justify-content: center;
+    gap: 1.25rem;
+  }
+
+  .btn {
+    font-size: 1rem;
+    padding: 0.9rem 1.8rem;
+  }
+}
+

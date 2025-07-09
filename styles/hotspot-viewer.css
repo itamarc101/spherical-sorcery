@@ -31,7 +31,9 @@ body {
   flex-direction: column;
   justify-content: center;
   text-align: center;
-  height: 100vh;
+  /* width: 100%; */
+  max-width: 1200px;
+  /* height: 100vh; */
 }
 
 h1 {
@@ -49,8 +51,9 @@ h2 {
 }
 
 .input-group {
-    margin-top: 1rem;
-    align-items: center;
+  margin-top: 1rem;
+  align-items: center;
+  gap: 1rem;
 }
 
 .image-display-container {
@@ -81,10 +84,15 @@ h2 {
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
     margin-top: 20px;
+    justify-self: center;
+    padding: 10px;
 }
 
 .cheat-grid-controller button {
     padding: 15px;
+    font-size: 1rem;
+    width: 100%;
+    max-width: 180px;
 }
 
 a {
@@ -96,4 +104,47 @@ nav {
     font-weight: 600;
     color: var(--color-accent);
     margin-top: 30px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 599px) {
+  h1 {
+    font-size: 2rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  .cheat-grid-controller {
+    grid-template-columns: 3fr;
+  }
+
+  .cheat-grid-controller button {
+    width: 100%;
+    max-width: none;
+  }
+
+  .input-group {
+    width: 100%;
+    padding: 0 1rem;
+  }
+}
+
+@media (max-width: 899px) {
+  h1 {
+    font-size: 2.4rem;
+  }
+
+  h2 {
+    font-size: 1.75rem;
+  }
+
+  .cheat-grid-controller {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .cheat-grid-controller button {
+    font-size: 1rem;
+  }
 }
