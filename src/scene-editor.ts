@@ -4,7 +4,6 @@ import {
   CSS2DRenderer,
   CSS2DObject,
 } from "three/examples/jsm/renderers/CSS2DRenderer.js";
-import html2canvas from "html2canvas";
 
 interface Hotspot {
   id: string;
@@ -16,8 +15,6 @@ interface Hotspot {
     z: number;
   };
 }
-
-// let isDragging = false;
 
 const hotspotData: Hotspot[] = [];
 const mouse = new THREE.Vector2();
@@ -36,12 +33,15 @@ let sphereMesh: THREE.Mesh;
 let controls: OrbitControls;
 let labelRenderer: CSS2DRenderer;
 
-// let loader = new THREE.TextureLoader();
-
 // When user clicks on any of the elements on this page
 document.addEventListener("DOMContentLoaded", () => {
+  //  check mouse for click vs drag
+  let mouseDownPos: { x: number; y: number } | null = null;
+  let mouseMoved = false;
+
   // container to load the image
   const container = document.getElementById("scene-container") as HTMLElement;
+
   // actual file that being uploaded
   const fileInput = document.getElementById(
     "panoramaInput"
@@ -49,6 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // button to export 360
   const export360Btn = document.getElementById("export360");
+
   // button to export current view
   const exportCurrentViewBtn = document.getElementById("exportCurrentView");
 
@@ -73,30 +74,72 @@ document.addEventListener("DOMContentLoaded", () => {
   exportCurrentViewBtn?.addEventListener("click", () => {
     console.log("clicked on export current");
 
-    const renderContainer = document.getElementById("render-container") as HTMLElement;
-    html2canvas(renderContainer, {
-      useCORS: true,
-      backgroundColor: null,
-    }).then((canvas) => {
-      canvas.toBlob((blob) => {
+    // render scene to img
+    renderer.render(scene, camera);
+    const sceneURL = renderer.domElement.toDataURL("image/png");
+
+    // arrange canvas with visible hotspots
+    const width = renderer.domElement.width;
+    const height = renderer.domElement.height;
+    const exportCanvas = document.createElement("canvas");
+    exportCanvas.width = width;
+    exportCanvas.height = height;
+    const ctx = exportCanvas.getContext("2d")!;
+
+    // 3d scene
+    const sceneImg = new window.Image();
+    sceneImg.onload = () => {
+      ctx.drawImage(sceneImg, 0, 0, width, height);
+
+      // show only visible hotspots
+      const frustum = new THREE.Frustum();
+      const screenMatrix = new THREE.Matrix4();
+
+      camera.updateMatrixWorld();
+      camera.updateProjectionMatrix();
+      screenMatrix.multiplyMatrices(
+        camera.projectionMatrix,
+        camera.matrixWorldInverse
+      );
+      frustum.setFromProjectionMatrix(screenMatrix);
+
+      hotspotData.forEach((hotspot) => {
+        const pos = new THREE.Vector3(
+          hotspot.position.x,
+          hotspot.position.y,
+          hotspot.position.z
+        );
+        if (!frustum.containsPoint(pos)) return; // point isnt visible
+
+        // 3d position to 2d position
+        const posScene = pos.clone().project(camera);
+        const x = (posScene.x * 0.5 + 0.5) * width;
+        const y = (1 - (posScene.y * 0.5 + 0.5)) * height;
+
+        const icon = hotspot.type === "shield" ? "🛡" : "⚔";
+
+        // draw icon on the position
+        ctx.font = "32px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.strokeStyle = "#222";
+        ctx.lineWidth = 4;
+        ctx.strokeText(icon, x, y);
+        ctx.fillStyle = "#fff";
+        ctx.fillText(icon, x, y);
+      });
+
+      //export
+      exportCanvas.toBlob((blob) => {
         if (!blob) return;
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
         link.download = "current-view.png";
         link.click();
-      });
-    });
-
-    // renderer.render(scene, camera);
-    // renderer.domElement.toBlob((blob) => {
-    //     if (!blob) return;
-    //     const url = URL.createObjectURL(blob);
-    //     const link = document.createElement('a');
-    //     link.href = url;
-    //     link.download = 'current-view.png';
-    //     link.click();
-    // }, 'image/png')
+      }, "image/png");
+    };
+    sceneImg.src = sceneURL;
   });
 
   let selectedHotspotType: "shield" | "sword" = "shield";
@@ -136,7 +179,29 @@ document.addEventListener("DOMContentLoaded", () => {
     controls.minDistance = 10;
     controls.maxDistance = 80;
 
-    renderer.domElement.addEventListener("click", onSceneClick);
+    // mouse down: record position
+    renderer.domElement.addEventListener("mousedown", (e) => {
+      mouseDownPos = { x: e.clientX, y: e.clientY };
+      mouseMoved = false;
+    });
+    // mouse move: detect drag
+    renderer.domElement.addEventListener("mousemove", (e) => {
+      if (mouseDownPos) {
+        const dx = e.clientX - mouseDownPos.x;
+        const dy = e.clientY - mouseDownPos.y;
+        if (Math.sqrt(dx * dx + dy * dy) > 5) {
+          mouseMoved = true;
+        }
+      }
+    });
+    // mouse up: shuold be  click if not dragged
+    renderer.domElement.addEventListener("mouseup", (e) => {
+      if (mouseDownPos && !mouseMoved) {
+        onSceneClick(e);
+      }
+      mouseDownPos = null;
+      mouseMoved = false;
+    });
 
     labelRenderer = new CSS2DRenderer();
     labelRenderer.setSize(container.clientWidth, container.clientHeight);
@@ -170,6 +235,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("Image loaded as URL");
       applyPanoramaImage(imageUrl);
     };
+
     reader.onerror = function (err) {
       console.error("FileReader error:", err);
     };
@@ -189,8 +255,6 @@ document.addEventListener("DOMContentLoaded", () => {
       console.warn("scene-container not found!");
       return;
     }
-
-    // container.innerHTML = ""; // hide loading 3d scene
 
     container.classList.add("visible"); // show img container
 
@@ -233,10 +297,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (intersects.length === 0) return;
 
     const point = intersects[0].point;
-
-    // Ask user which icon to place (🛡 or ⚔)
-    // const type = prompt("Type 'shield' or 'sword':")?.toLowerCase();
-    // if (type !== 'shield' && type !== 'sword') return;
 
     const id = crypto.randomUUID();
     const label = selectedHotspotType === "shield" ? "Shield" : "Sword"; // Changed this line
@@ -283,12 +343,10 @@ document.addEventListener("DOMContentLoaded", () => {
           const labelElement = div.querySelector(".label")! as HTMLElement;
           let newLabel: string;
           if (newIcon === "🛡") {
-              newLabel = "Shield";
-          } 
-          else if (newIcon === "⚔") {
-              newLabel = "Sword";
-          }
-          else {
+            newLabel = "Shield";
+          } else if (newIcon === "⚔") {
+            newLabel = "Sword";
+          } else {
             newLabel = "NA";
           }
           labelElement.textContent = newLabel;
@@ -317,14 +375,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const labelObj = new CSS2DObject(div);
     labelObj.position.copy(position.clone().add(new THREE.Vector3(0, -25, 0)));
     scene.add(labelObj);
-
-    // const geometry = new THREE.SphereGeometry(5, 8, 8);
-    // const material = new THREE.MeshBasicMaterial({
-    // color: type === 'shield' ? 0x00ffff : 0xff3333,
-    // });
-    // const marker = new THREE.Mesh(geometry, material);
-    // marker.position.copy(position);
-    // scene.add(marker);
 
     hotspotData.push({
       id,
