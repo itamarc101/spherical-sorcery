@@ -13,6 +13,32 @@ interface Hotspot {
 
 let hotspotData: Hotspot[] = [];
 
+function convert2Dto3D(
+  xPercent: number,
+  yPercent: number,
+  camera: THREE.PerspectiveCamera
+): { x: number; y: number; z: number } {
+  // Convert % coordinates to NDC space [-1, 1]
+  const ndcX = (xPercent / 100) * 2 - 1;
+  const ndcY = -((yPercent / 100) * 2 - 1); // Y is flipped
+
+  // Create NDC point at z = 0.5 (any z works; direction is what matters)
+  const ndc = new THREE.Vector3(ndcX, ndcY, 0.5);
+
+
+  // Unproject to get the world-space direction vector
+  const worldDirection = ndc.unproject(camera).sub(camera.position).normalize();
+
+  const SPHERE_RADIUS = 500;
+  const position = worldDirection.multiplyScalar(SPHERE_RADIUS);
+
+  return {
+    x: position.x,
+    y: position.y,
+    z: position.z,
+  };
+}
+
 function convert3Dto2D(
   x: number,
   y: number,
@@ -45,6 +71,9 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   const imageInput = document.getElementById("imageInput") as HTMLInputElement;
+  
+  const imageDisplayContainer = document.querySelector(".image-display-container") as HTMLElement;
+  
   const jsonInput = document.getElementById(
     "jsonInput"
   ) as HTMLInputElement | null;
@@ -72,6 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const reader = new FileReader();
     reader.onload = () => {
       viewImage.onload = () => {
+        imageDisplayContainer.style.display = "block";
         updateOverlaySize();
         if (hotspotData.length > 0) {
           renderHotspots();
@@ -199,15 +229,6 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("Container rect:", containerRect);
     console.log("Overlay positioned at:", relativeLeft, relativeTop);
     console.log("Overlay size:", imageRect.width, imageRect.height);
-
-    // const imageDisplayWidth = viewImage.offsetWidth;
-    // const imageDisplayHeight = viewImage.offsetHeight;
-
-    // overlay.style.width = `${imageDisplayWidth}px`;
-    // overlay.style.height = `${imageDisplayHeight}px`;
-
-    // overlay.style.left = `${viewImage.offsetLeft}px`;
-    // overlay.style.top = `${viewImage.offsetTop}px`;
   }
 
   function renderHotspots() {
@@ -383,14 +404,15 @@ document.addEventListener("DOMContentLoaded", () => {
     wrapper.style.transform = `scale(${scaleX}, ${scaleY}) translate(${translateX}%, ${translateY}%)`;
   }
 
-  const exportBtn = document.querySelector(
-    "button[onclick='exportHotspots()']"
-  );
+  const exportBtn = document.getElementById("exportBtn");
+
   if (exportBtn) {
     exportBtn.addEventListener("click", () => {
-      const enriched = hotspotData.map((h) => ({
-        ...h,
-        // worldPosition: convert2Dto3D(h.position.x, h.position.y),
+      const enriched = hotspotData.map(h => ({
+        id: h.id,
+        type: h.type,
+        label: h.label,
+        position: convert2Dto3D(h.position.x, h.position.y, camera),
       }));
 
       const blob = new Blob([JSON.stringify(enriched, null, 2)], {

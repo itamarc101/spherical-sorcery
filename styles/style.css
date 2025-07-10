@@ -72,7 +72,7 @@ h1 {
 #page-button {
   align-self: center;
   padding: 0.4rem 1rem;
-  background-color: var(--color-primary);
+  background-color: var(--color-bg);
   color: var(--color-secondary);
   font-weight: 500;
   border-radius: 6px;
@@ -82,6 +82,7 @@ h1 {
   transition: background-color 0.3s;
   border: none;
   cursor: pointer;
+  width: 100%;
 }
 
 #page-button:hover {
@@ -93,7 +94,9 @@ h1 {
   list-style: none;
   padding-left: 0;
   margin-left: 0;
+  padding-bottom: 20px;
 }
+
 
 .buttons {
   display: flex;

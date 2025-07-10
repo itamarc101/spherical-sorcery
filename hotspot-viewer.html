@@ -13,16 +13,25 @@
   </head>
   <body>
     <div class="page">
-      <h1>2D Hotspot Viewer</h1>
-      <p>
-        Upload a screenshot and hotspot file to view and adjust 2D hotspot
-        positions.
-      </p>
+      <header class="header">
+
+        <h1>2D Hotspot Viewer</h1>
+        <nav>
+          <a href="index.html">Back to Main Portal</a>
+        </nav>
+        <p>
+          Upload a screenshot and hotspot file to view and adjust 2D hotspot
+          positions.
+        </p>
+      </header>
 
       <div class="input-group">
         <input type="file" id="imageInput" accept="image/*" />
         <input type="file" id="jsonInput" accept="application/json" />
+        <button id="exportBtn">Export</button>
       </div>
+      
+
 
       <div class="image-display-container">
         <div class="viewer-wrapper">
@@ -44,11 +53,6 @@
         <button data-row="2" data-col="2">9</button>
       </div>
 
-      <button onclick="exportHotspots()">Export</button>
-
-      <nav>
-        <a href="index.html">Back to Main Portal</a>
-      </nav>
     </div>
   </body>
 </html>

@@ -201,11 +201,19 @@ input[type="file"] {
 a {
   color: inherit;
   text-decoration: none;
+  background-color: var(--color-primary);
+  padding: 15px 15px;
+  border-radius: 8px;
 }
+
+a:hover {
+  background-color: var(--color-accent);
+  color: var(--color-bg);
+}
+
 
 nav {
     font-weight: 600;
-    color: var(--color-accent); 
 }
 
 /* .scene-controls {
