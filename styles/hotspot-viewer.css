@@ -14,64 +14,46 @@
   --font-body: "Work Sans", sans-serif;
 }
 
+
 body {
   background-color: var(--color-bg);
   font-family: var(--font-body);
   color: var(--color-secondary);
-  line-height: 1.6;
-
+  line-height: 1.2;
+  display: flex;
   justify-content: center;
   align-items: center;
+  padding: 2rem;
 }
 
 .page {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  text-align: center;
-  /* width: 100%; */
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
-  /* height: 100vh; */
+  text-align: center;
+}
+
+h1, h2 {
+  font-family: var(--font-title);
+  color: var(--color-accent);
+  margin-bottom: 1rem;
 }
 
 h1 {
-  font-family: var(--font-title);
   font-size: 3rem;
-  margin-bottom: 1rem;
-  color: var(--color-accent);
 }
 
 h2 {
-  font-family: var(--font-title);
   font-size: 2rem;
-  margin-bottom: 1rem;
-  color: var(--color-accent);
-}
-
-.hotspot {
-  background: rgba(255, 255, 255, 0.85);
-  padding: 4px 8px;
-  border-radius: 8px;
-  font-size: 1.2rem;
-  font-weight: bold;
-  cursor: grab;
-  position: absolute;
-  user-select: none;
-  transition: transform 0.2s;
-}
-
-.hotspot:hover {
-  transform: translate(-50%, -50%) scale(1.1);
 }
 
 .input-group {
   margin-top: 1rem;
   display: flex;
-  align-items: center;
-  gap: 1rem;
+  flex-wrap: wrap;
   justify-content: center;
+  gap: 1rem;
 }
 
 input[type="file"] {
@@ -81,48 +63,97 @@ input[type="file"] {
   border: none;
   border-radius: 8px;
   font-weight: bold;
-  width: 255px;
+  width: 250px;
+  cursor: pointer;
 }
 
 .image-display-container {
+  width: 100%;
+  max-width: 800px;
+  aspect-ratio: 1 / 1;
   position: relative;
-  max-width: 90%;
-  max-height: 70vh;
+  margin: 2rem auto;
+  border: 2px solid var(--color-accent);
   overflow: hidden;
-  margin: 20px auto;
-  border: 1px solid var(--color-accent);
 }
 
+.viewer-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: top left;
+}
+
+
 #viewerImage {
-  max-height: 70vh;
-  width: auto;
-  /* height: auto; */
-  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  /* user-select: none; 
+  pointer-events: none; */
+  display: block; 
 }
 
 #hotspot-overlay {
   position: absolute;
+  width: 100%;
+  height: 100%;
   top: 0;
   left: 0;
-  width: 800px;
-  height: 800px;
+}
+
+.hotspot {
+  position: absolute;
+  font-size: 24px;
+  background-color: var(--color-accent);
+  border: 1px solid var(--color-bg);
+  border-radius: 6px;
+  padding: 4px;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  pointer-events: auto;
+  user-select: none;
+  cursor: pointer;
+}
+
+.hotspot:hover {
+  transform: translate(-50%, -50%) scale(1.1);
 }
 
 .cheat-grid-controller {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 3px;
-  margin-top: 2px;
-  align-self: center;
-  padding: 5px;
-  width: 450px;
+  margin: 2rem auto;
+  /* width: 100%; */
+  max-width: 450px;
 }
 
 .cheat-grid-controller button {
-  aspect-ratio: 1/1;
+  aspect-ratio: 1 / 1;
   width: 100%;
-  padding: 4px;
+  font-size: 1rem;
+  padding: 0.5rem;
+  cursor: pointer;
   height: 50px;
+}
+
+.cheat-grid-controller button.selected {
+  background-color: var(--color-primary);
+}
+
+button {
+  /* margin-top: 20px; */
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--color-accent);
+  color: var(--color-secondary);
+  cursor: pointer;
 }
 
 a {
@@ -134,31 +165,6 @@ nav {
   font-weight: 600;
   color: var(--color-accent);
   margin-top: 30px;
-}
-
-/* Mobile Responsive */
-@media (max-width: 599px) {
-  h1 {
-    font-size: 2rem;
-  }
-
-  h2 {
-    font-size: 1.5rem;
-  }
-
-  .cheat-grid-controller {
-    grid-template-columns: 3fr;
-  }
-
-  .cheat-grid-controller button {
-    width: 100%;
-    max-width: none;
-  }
-
-  .input-group {
-    width: 100%;
-    padding: 0 1rem;
-  }
 }
 
 @media (max-width: 899px) {

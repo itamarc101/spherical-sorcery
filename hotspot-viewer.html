@@ -25,8 +25,10 @@
       </div>
 
       <div class="image-display-container">
-        <img id="viewerImage" src="" alt="Hotspot View" />
-        <div id="hotspot-overlay"></div>
+        <div class="viewer-wrapper">
+          <img id="viewerImage" src="" alt="Hotspot View" />
+          <div id="hotspot-overlay"></div>
+        </div>
       </div>
 
       <h2>Cheat Grid Controller</h2>
@@ -41,6 +43,8 @@
         <button data-row="2" data-col="1">8</button>
         <button data-row="2" data-col="2">9</button>
       </div>
+
+      <button onclick="exportHotspots()">Export</button>
 
       <nav>
         <a href="index.html">Back to Main Portal</a>
