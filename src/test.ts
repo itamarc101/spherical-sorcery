@@ -55,7 +55,7 @@ function testRoundTrip() {
   // Compute the difference (Euclidean distance)
   const error = original.distanceTo(new THREE.Vector3(roundTrip.x, roundTrip.y, roundTrip.z));
 
-  // ✨ IF THE COORDINATES RETURN, SO SHALL HE
+  // IF THE COORDINATES RETURN, SO SHALL HE
   if (error < 1) {
     console.log("Round-trip test passed. Error:", error.toFixed(4));
     } else {
