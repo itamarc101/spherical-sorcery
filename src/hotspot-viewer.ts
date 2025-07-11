@@ -5,6 +5,7 @@ interface Hotspot {
   type: "shield" | "sword";
   label: string;
   position: {
+    // 0 - 100
     x: number;
     y: number;
   };
@@ -21,7 +22,9 @@ function convert2Dto3D(
   camera: THREE.PerspectiveCamera
 ): { x: number; y: number; z: number } {
   // Convert % of screen coordinates to NDC(normalized device coords) space [-1, 1]
-  //
+  // Screen coords from (0,0) to (100,100)
+  // normalized is (-1,-1) to (1,1)
+  // calculating 0% -> 1, 50% -> 0, 100% -> 1
   const ndcX = (xPercent / 100) * 2 - 1; // from [0,100] -> [-1,1]
   const ndcY = -((yPercent / 100) * 2 - 1); // Y is flipped because coords are from top to bottom
 
@@ -31,6 +34,8 @@ function convert2Dto3D(
 
   // Convert normalized device cords to 3D direction
   // Unproject to get the world-space direction vector
+  // unproject -> transforms vector using camera projection matrix
+  // normalize -> ensures the vector is len of 1
   const worldDirection = ndc.unproject(camera).sub(camera.position).normalize();
 
   // extend ray to a radius because all the hotspot on a sphere, we take fixed number of the img size
@@ -118,8 +123,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const reader = new FileReader();
     reader.onload = () => {
       viewImage.onload = () => {
+        // make container visible 
         imageDisplayContainer.style.display = "block";
         updateOverlaySize();
+        // if hotspots already loaded - render
         if (hotspotData.length > 0) {
           renderHotspots();
         }
@@ -155,7 +162,8 @@ document.addEventListener("DOMContentLoaded", () => {
               rawData.camera.quaternion.z,
               rawData.camera.quaternion.w
             );
-          } else if (rawData.camera.rotation) {
+          } 
+          else if (rawData.camera.rotation) {
             // If only rotation is present (Euler angles)
             camera.rotation.set(
               rawData.camera.rotation.x,
@@ -163,12 +171,13 @@ document.addEventListener("DOMContentLoaded", () => {
               rawData.camera.rotation.z
             );
           }
+          // update camera fov and ratio
           if (rawData.camera.fov) camera.fov = rawData.camera.fov;
           if (rawData.camera.aspect) camera.aspect = rawData.camera.aspect;
           camera.updateProjectionMatrix();
           camera.updateMatrixWorld(true);
 
-          // Parse hotspots
+          // Parse hotspotsfrom 3d to 2d position
           hotspotData = rawData.hotspots.map((h: any) => {
             // Always use 3D position for projection
             const converted = convert3Dto2D(
@@ -185,7 +194,8 @@ document.addEventListener("DOMContentLoaded", () => {
               position3D: { x: h.position.x, y: h.position.y, z: h.position.z },
             };
           });
-        } else {
+        }
+        else {
           alert("Invalid JSON format.");
           return;
         }
@@ -201,6 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Handle window resize to maintain responsive behavior
+  // on window resize update overlay size on rerender hotspots for responsitive
   window.addEventListener("resize", () => {
     if (viewImage.src && hotspotData.length > 0) {
       // Small delay to ensure image has resized
@@ -230,6 +241,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const relativeLeft = imageRect.left - containerRect.left;
     const relativeTop = imageRect.top - containerRect.top;
 
+    // position overlay exactly over the image
     overlay.style.position = "absolute";
     overlay.style.width = `${imageRect.width}px`;
     overlay.style.height = `${imageRect.height}px`;
@@ -249,17 +261,18 @@ document.addEventListener("DOMContentLoaded", () => {
     overlay.innerHTML = ""; // clear old hotspots
 
     hotspotData.forEach((h, index) => {
+      // create div element for each hotspot
       const el = document.createElement("div");
       el.className = "hotspot";
       el.innerText = h.type === "shield" ? "🛡" : "⚔";
-      el.title = h.label;
+      el.title = h.label; // tooltip on hover shows label
 
       el.style.left = `${h.position.x}%`;
       el.style.top = `${h.position.y}%`;
       el.style.transform = "translate(-50%, -50%)";
       el.setAttribute("data-id", h.id);
 
-      // Click handler for debug
+      // debug: see which one is clicked and in what position
       el.addEventListener("click", (e) => {
         e.stopPropagation();
         console.log(
@@ -274,6 +287,7 @@ document.addEventListener("DOMContentLoaded", () => {
       let offsetX = 0;
       let offsetY = 0;
 
+      // start dragging cand calculate initial offset to position
       el.addEventListener("mousedown", (e) => {
         isDragging = true;
         const rect = overlay.getBoundingClientRect();
@@ -282,6 +296,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.body.style.cursor = "grabbing";
       });
 
+      // update hotspot position while dragging
       window.addEventListener("mousemove", (e) => {
         if (!isDragging) return;
 
@@ -296,6 +311,7 @@ document.addEventListener("DOMContentLoaded", () => {
         el.style.top = `${h.position.y}%`;
       });
 
+      // release the hotspot 
       window.addEventListener("mouseup", () => {
         if (isDragging) {
           isDragging = false;
@@ -329,8 +345,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // validates the chosen buttons
+  // if none or all selected - image full size
+  // if select is valid rectangle resize image accordingly
   function checkSelection() {
-    // Get all selected buttons
+    // all selected buttons
     const selectedButtons = Array.from(
       document.querySelectorAll(".cheat-grid-controller button.selected")
     );
@@ -347,8 +366,9 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // extract row and col data
     const positions = selectedButtons.map((button: Element) => {
-      const btn = button as HTMLButtonElement; // Cast to HTMLButtonElement
+      const btn = button as HTMLButtonElement; 
       return {
         row: parseInt(btn.getAttribute("data-row") || "0"),
         col: parseInt(btn.getAttribute("data-col") || "0"),
@@ -360,22 +380,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (isValid) {
       resizeImage(false, positions); // Resize based on selected area
-    } else {
+    }
+    else {
       alert("Selection must be a solid rectangle or square—no gaps allowed!");
     }
   }
 
   function isValidRectangle(
-    positions: { row: number; col: number }[]
-  ): boolean {
+    positions: { row: number; col: number }[]): boolean {
+
     const rows = positions.map((p) => p.row);
     const cols = positions.map((p) => p.col);
 
+    // get min and max value 
     const minRow = Math.min(...rows);
     const maxRow = Math.max(...rows);
     const minCol = Math.min(...cols);
     const maxCol = Math.max(...cols);
 
+    // calc expcted number of buttons for full rectangle
     const expectedCount = (maxRow - minRow + 1) * (maxCol - minCol + 1);
 
     // Use a Set to make unique position keys
@@ -385,10 +408,8 @@ document.addEventListener("DOMContentLoaded", () => {
     return uniqueKeys.size === expectedCount;
   }
 
-  function resizeImage(
-    fullScreen: boolean,
-    positions?: { row: number; col: number }[]
-  ) {
+  // resize and change position of the image 
+  function resizeImage(fullScreen: boolean, positions?: { row: number; col: number } []) {
     const wrapper = document.querySelector(".viewer-wrapper") as HTMLElement;
 
     if (fullScreen || !positions || positions.length === 0) {
@@ -404,9 +425,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const minCol = Math.min(...cols);
     const maxCol = Math.max(...cols);
 
+    // calc how many row and col selected
     const rowSpan = maxRow - minRow + 1;
     const colSpan = maxCol - minCol + 1;
 
+    // calc scale factor to zoom in 
     const scaleX = 3 / colSpan;
     const scaleY = 3 / rowSpan;
 

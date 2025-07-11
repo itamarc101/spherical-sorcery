@@ -31,7 +31,7 @@ interface ExportData {
 let currentEditingHotspot: HTMLElement | null = null;
 
 const hotspotData: Hotspot[] = [];
-const mouse = new THREE.Vector2();
+const mouse = new THREE.Vector2(); // normalized mouse position for raycast
 const raycaster = new THREE.Raycaster();
 
 // Camera Setup
@@ -47,7 +47,7 @@ let sphereMesh: THREE.Mesh;
 let controls: OrbitControls;
 let labelRenderer: CSS2DRenderer;
 
-// When user clicks on any of the elements on this page
+// initilalize scene and handle when user clicks on any of the elements on this page
 document.addEventListener("DOMContentLoaded", () => {
   //  check mouse for click vs drag
   let mouseDownPos: { x: number; y: number } | null = null;
@@ -82,21 +82,21 @@ document.addEventListener("DOMContentLoaded", () => {
       position: {
         x: camera.position.x,
         y: camera.position.y,
-        z: camera.position.z
+        z: camera.position.z,
       },
       rotation: {
         x: camera.rotation.x,
         y: camera.rotation.y,
-        z: camera.rotation.z
+        z: camera.rotation.z,
       },
       fov: camera.fov,
-      aspect: camera.aspect
+      aspect: camera.aspect,
     };
 
-  const exportData: ExportData = {
-    hotspots: hotspotData,
-    camera: cameraState
-  };
+    const exportData: ExportData = {
+      hotspots: hotspotData,
+      camera: cameraState,
+    };
     const json = JSON.stringify(exportData, null, 2);
     const blob = new Blob([json], { type: "application/json" });
 
@@ -111,31 +111,33 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("clicked on export current");
 
     // render scene to img
-  renderer.render(scene, camera);
-  const sceneURL = renderer.domElement.toDataURL("image/png");
+    renderer.render(scene, camera);
+    const sceneURL = renderer.domElement.toDataURL("image/png");
 
-  // Get current camera state and store it for the viewer
-  const cameraState: CameraState = {
-    position: {
-      x: camera.position.x,
-      y: camera.position.y,
-      z: camera.position.z
-    },
-    rotation: {
-      x: camera.rotation.x,
-      y: camera.rotation.y,
-      z: camera.rotation.z
-    },
-    fov: camera.fov,
-    aspect: camera.aspect
-  };
+    // Get current camera state and store it for the viewer
+    const cameraState: CameraState = {
+      position: {
+        x: camera.position.x,
+        y: camera.position.y,
+        z: camera.position.z,
+      },
+      rotation: {
+        x: camera.rotation.x,
+        y: camera.rotation.y,
+        z: camera.rotation.z,
+      },
+      fov: camera.fov,
+      aspect: camera.aspect,
+    };
 
-  // Store camera state in localStorage for the viewer to use
-  localStorage.setItem('currentViewCamera', JSON.stringify(cameraState));
+    // Store camera state in localStorage for the viewer to use
+    localStorage.setItem("currentViewCamera", JSON.stringify(cameraState));
 
     // arrange canvas with visible hotspots
     const width = renderer.domElement.width;
     const height = renderer.domElement.height;
+
+    // create new canvas to put the scene and hotspots
     const exportCanvas = document.createElement("canvas");
     exportCanvas.width = width;
     exportCanvas.height = height;
@@ -158,6 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
       );
       frustum.setFromProjectionMatrix(screenMatrix);
 
+      // loop and render visible hotspot
       hotspotData.forEach((hotspot) => {
         const pos = new THREE.Vector3(
           hotspot.position.x,
@@ -168,7 +171,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // 3d position to 2d position
         const posScene = pos.clone().project(camera);
+        //project camera gives view matrix (world to camera) and projection matrix ( camera to normalized coords)
+        // resulting a vector (posScene) with x,y,z in normalized:
+        // x, y, z in [-1,1]
+
+        // convert from [-1,1] to [0,1] so we multiply by canvas width/height
+        // -1 is left edge, 1 is right edge
+        // x * 0.5 -> [-0.5, 0.5]
+        // + 0.5 -> [0, 1]
+        // * width -> [0, canvas width pixel]
         const x = (posScene.x * 0.5 + 0.5) * width;
+
+        // for y: 1 is top; -1 is bottom => y=0 is top; y=height is bottom (opposite)
+        //flip because three.js says y+ is up
         const y = (1 - (posScene.y * 0.5 + 0.5)) * height;
 
         const icon = hotspot.type === "shield" ? "🛡" : "⚔";
@@ -214,7 +229,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const type = button.dataset.type as "shield" | "sword";
         selectedHotspotType = type;
       });
-    });
+  });
 
   function initScene(container: HTMLElement) {
     console.log("INSIDE INIT SCENE");
@@ -283,7 +298,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     console.log("File selected:", file.name, file.type);
 
-    const reader = new FileReader();
+    const reader = new FileReader(); //read file as data url
+
     reader.onload = function (event) {
       const imageUrl = event.target?.result as string;
 
@@ -325,7 +341,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       console.log("Texture loaded");
 
-      const geometry = new THREE.SphereGeometry(500, 60, 40);
+      const geometry = new THREE.SphereGeometry(500, 60, 40); // Radius 500,(width, height) high segments for smoothness
       geometry.scale(-1, 1, 1);
 
       const material = new THREE.MeshBasicMaterial({ map: loader });
@@ -354,11 +370,22 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!sphereMesh) return;
 
     // convert mouse click to normalize coords
+    // get size and position of canvas relative to page
     const rect = renderer.domElement.getBoundingClientRect();
+
+    // convert mouse click x axis position to normalized coords
+    // range [-1,1]
+    // X - rect.left -> X relative to canvas (0 to width)
+    // divide by rect.width -> normalize to [0,1]
+    // * 2 scale to [0,2] => - 1 --> [-1,1]
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+
+    // for Y top=0, in normalized top=1 and bottom=-1 so flip Y (multiply by -)
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
+    // cast ray from camera to mouse position in normalized
     raycaster.setFromCamera(mouse, camera);
+    // check intersection between ray and the image (as arr of points)
     const intersects = raycaster.intersectObject(sphereMesh);
     if (intersects.length === 0) return;
 
@@ -386,8 +413,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (type === "sword") {
       div.addEventListener("click", (e) => {
+        // if hotspot already edited and locked - do nothing
         if (div.hasAttribute("data-locked")) return;
 
+        // prevent from clicking 
         e.stopPropagation();
 
         // Show edit popup next to the icon
@@ -410,6 +439,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         currentEditingHotspot = div;
 
+        // puts the popup near the mouse cursor
         popup.style.left = `${e.clientX + 10}px`;
         popup.style.top = `${e.clientY + 10 + window.scrollY}px`;
         popup.classList.remove("hidden");
