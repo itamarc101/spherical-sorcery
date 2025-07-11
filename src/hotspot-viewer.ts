@@ -9,6 +9,7 @@ interface Hotspot {
     x: number;
     y: number;
   };
+  position3D?: { x: number; y: number; z: number };
 }
 
 let hotspotData: Hotspot[] = [];
@@ -16,10 +17,11 @@ let hotspotData: Hotspot[] = [];
 /*
  * Converts 2D screen percentage coordinates from 2D image into 3D coordinates
  */
-function convert2Dto3D(
+export function convert2Dto3D(
   xPercent: number,
   yPercent: number,
-  camera: THREE.PerspectiveCamera
+  camera: THREE.PerspectiveCamera,
+  radius=500
 ): { x: number; y: number; z: number } {
   // Convert % of screen coordinates to NDC(normalized device coords) space [-1, 1]
   // Screen coords from (0,0) to (100,100)
@@ -39,8 +41,9 @@ function convert2Dto3D(
   const worldDirection = ndc.unproject(camera).sub(camera.position).normalize();
 
   // extend ray to a radius because all the hotspot on a sphere, we take fixed number of the img size
-  const SPHERE_RADIUS = 500;
-  const position = worldDirection.multiplyScalar(SPHERE_RADIUS);
+  // const SPHERE_RADIUS = 500;
+  const position = worldDirection.multiplyScalar(radius);
+
 
   // final 3d coords
   // They asked where it came from, so we traced its shadow back to the sphere.
@@ -54,7 +57,7 @@ function convert2Dto3D(
 /*
  * Converts 3D coords on a sphere to 2D screen percentage coords (0,100) to appear on 2D image
  */
-function convert3Dto2D(
+export function convert3Dto2D(
   x: number,
   y: number,
   z: number,
@@ -443,12 +446,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (exportBtn) {
     exportBtn.addEventListener("click", () => {
-      const enriched = hotspotData.map((h) => ({
-        id: h.id,
-        type: h.type,
-        label: h.label,
-        position: convert2Dto3D(h.position.x, h.position.y, camera),
-      }));
+      const enriched = hotspotData.map((h) => {
+        // Calculate radius from original 3D position if available, else fallback to 500
+        const radius =
+          h.position3D
+            ? Math.sqrt(
+                h.position3D.x * h.position3D.x +
+                  h.position3D.y * h.position3D.y +
+                  h.position3D.z * h.position3D.z
+              )
+            : 500; // fallback radius
+
+        return {
+          id: h.id,
+          type: h.type,
+          label: h.label,
+          // Pass radius as the 4th argument to convert2Dto3D
+          position: convert2Dto3D(h.position.x, h.position.y, camera, radius),
+        };
+      });
 
       const blob = new Blob([JSON.stringify(enriched, null, 2)], {
         type: "application/json",
