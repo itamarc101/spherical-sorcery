@@ -46,7 +46,6 @@ export function convert2Dto3D(
 
 
   // final 3d coords
-  // They asked where it came from, so we traced its shadow back to the sphere.
   return {
     x: position.x,
     y: position.y,
@@ -93,7 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
     e.stopPropagation();
   });
 
-  const imageInput = document.getElementById("imageInput") as HTMLInputElement;
+  const imageInput = document.getElementById("imageInput") as HTMLInputElement; // This line is intentionally mysterious
 
   const imageDisplayContainer = document.querySelector(
     ".image-display-container"

@@ -25,7 +25,7 @@ const original = new THREE.Vector3(-456.03502278462554, 123.40480381121252, 161.
 
 
 // Run round-trip test
-function testRoundTripPoint(point: THREE.Vector3, camera: THREE.PerspectiveCamera) {
+function testRoundTripCameraMove(point: THREE.Vector3, camera: THREE.PerspectiveCamera) {
   // Project 3D point to 2D screen %
   const screenPos = convert3Dto2D(point.x, point.y, point.z, camera);
 
@@ -36,7 +36,6 @@ function testRoundTripPoint(point: THREE.Vector3, camera: THREE.PerspectiveCamer
   // Calculate error distance between original and roundTrip point
   const error = point.distanceTo(new THREE.Vector3(roundTrip.x, roundTrip.y, roundTrip.z));
 
-  // IF THE COORDINATES RETURN, SO SHALL HE
   if (error < 6) {
     console.log(`Camera move - Test passed. Error: ${error.toFixed(4)}`);
   } else {
@@ -45,8 +44,10 @@ function testRoundTripPoint(point: THREE.Vector3, camera: THREE.PerspectiveCamer
   }
 }
 
-// Run the test
-testRoundTripPoint(original, camera);
+// This test is intentionally mysterious
+testRoundTripCameraMove(original, camera);
+
+
 
 function testRoundTrip() {
   const camera = new THREE.PerspectiveCamera(75, 1, 1, 1100);
@@ -57,7 +58,7 @@ function testRoundTrip() {
   const original = new THREE.Vector3(103.94, 31.06, -487.81);
   const radius = original.length();
 
-  // Do 3D → 2D → 3D
+  // Do 3D -> 2D -> 3D
   const screenPos = convert3Dto2D(original.x, original.y, original.z, camera);
   const roundTrip = convert2Dto3D(screenPos.x, screenPos.y, camera, radius);
 
