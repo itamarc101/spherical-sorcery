@@ -79,6 +79,9 @@ Converts 2D screen percentage coordinates (from a 2D image) into 3D coordinates.
   - Y is flipped.
   - yPercent = 0 -> ndcY = 1 (TOP)
   - yPercent = 100 -> ndcY = -1 (BOTTOM)
+- Example:
+  - Point at (50%,50%) -> NDC (0,0)
+  - Point at (0%, 0%) -> NDC(-1,1)
 
 ### 2. 3D → 2D: `convert3Dto2D`
 Converts 3D coordinates on the sphere to 2D screen percentage coordinates (for overlaying on a 2D image).
