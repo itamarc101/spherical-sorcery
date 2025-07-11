@@ -38,6 +38,7 @@ function convert2Dto3D(
   const position = worldDirection.multiplyScalar(SPHERE_RADIUS);
 
   // final 3d coords
+  // They asked where it came from, so we traced its shadow back to the sphere.
   return {
     x: position.x,
     y: position.y,

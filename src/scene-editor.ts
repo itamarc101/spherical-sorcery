@@ -106,6 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
     link.click();
   });
 
+  // The portal blinks — we capture what was, before it remembers to move again.
   exportCurrentViewBtn?.addEventListener("click", () => {
     console.log("clicked on export current");
 
