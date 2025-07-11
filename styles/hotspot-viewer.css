@@ -84,13 +84,27 @@ input[type="file"] {
   cursor: pointer;
 }
 
+.grid-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center; 
+}
+
+.content-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+
 .image-display-container {
   display: none;
   width: 100%;
   max-width: 800px;
   aspect-ratio: 1 / 1;
   position: relative;
-  margin: 2rem auto;
+  margin: 0 auto;
   overflow: hidden;
 }
 
@@ -143,6 +157,7 @@ input[type="file"] {
   grid-template-columns: repeat(3, 1fr);
   gap: 3px;
   margin: 2rem auto;
+  height: 300px;
   max-width: 450px;
 }
 
@@ -152,7 +167,7 @@ input[type="file"] {
   font-size: 1rem;
   padding: 0.5rem;
   cursor: pointer;
-  height: 50px;
+  height: 80px;
 }
 
 .cheat-grid-controller button.selected {

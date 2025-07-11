@@ -76,6 +76,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   export360Btn?.addEventListener("click", () => {
     console.log("Clicked on export 360");
+    if (!hotspotData || hotspotData.length === 0) {
+      alert("No hotspots loaded. Please load hotspots and try again.");
+      return;
+    }
 
     // Get current camera state
     const cameraState: CameraState = {
