@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Hotspot Viewer Test</title>
+  <style>
+    #viewer {
+      position: relative;
+      width: 800px;
+      height: 800px;
+      border: 1px solid #ccc;
+      background-color: #f8f8f8;
+      overflow: hidden;
+    }
+    .hotspot {
+      position: absolute;
+      font-size: 24px;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <h2>Hotspot Viewer</h2>
+  <div id="viewer"></div>
+
+  <script type="module">
+    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js';
+
+    const viewer = document.getElementById("viewer");
+
+    // Your sample JSON
+    const hotspotJSON = [
+      {
+        "id": "324d9dc6-a3c1-4bf1-8727-661ab7e3d165",
+        "type": "shield",
+        "label": "Shield",
+        "position": {
+          "x": 166.692,
+          "y": 153.765,
+          "z": -444.899
+        }
+      },
+      {
+        "id": "4512acf8-8c3b-4c90-aa1d-d3098ae0b670",
+        "type": "shield",
+        "label": "Shield",
+        "position": {
+          "x": -246.15,
+          "y": -21.425,
+          "z": -434.031
+        }
+      },
+      {
+        "id": "cce741a5-7446-43c0-bba3-e790b942962f",
+        "type": "sword",
+        "label": "Sword",
+        "position": {
+          "x": -258.12,
+          "y": 119.784,
+          "z": 410.262
+        }
+      },
+      {
+        "id": "ab0b48e5-4fe3-446d-af09-eb634f267c20",
+        "type": "shield",
+        "label": "Shield",
+        "position": {
+          "x": -465.692,
+          "y": -45.978,
+          "z": 173.612
+        }
+      }
+    ];
+
+    // Set up camera
+    const camera = new THREE.PerspectiveCamera(75, 1, 1, 1100);
+    camera.position.set(0, 0, 0.1);
+
+    // Convert 3D to screen % coordinates
+    function convert3Dto2D(x, y, z, camera) {
+      const world = new THREE.Vector3(x, y, z);
+      const projected = world.project(camera);
+      return {
+        x: ((projected.x + 1) / 2) * 100,
+        y: ((-projected.y + 1) / 2) * 100
+      };
+    }
+
+    function isVisible3D(x, y, z, camera) {
+      const v = new THREE.Vector3(x, y, z).project(camera);
+      return (
+        v.x >= -1 && v.x <= 1 &&
+        v.y >= -1 && v.y <= 1 &&
+        v.z >= -1 && v.z <= 1
+      );
+    }
+
+    function renderHotspots(data) {
+      viewer.innerHTML = "";
+
+      data.forEach((h) => {
+        const { x, y, z } = h.position;
+
+        if (!isVisible3D(x, y, z, camera)) {
+          console.log(`Skipping ${h.label} (${h.type}) — out of view`);
+          return;
+        }
+
+        const screen = convert3Dto2D(x, y, z, camera);
+        console.log(`Rendering ${h.label} (${h.type}) at ${screen.x.toFixed(2)}%, ${screen.y.toFixed(2)}%`);
+
+        const el = document.createElement("div");
+        el.className = "hotspot";
+        el.innerText = h.type === "shield" ? "🛡" : "⚔";
+        el.style.left = `${screen.x}%`;
+        el.style.top = `${screen.y}%`;
+        viewer.appendChild(el);
+      });
+    }
+
+    renderHotspots(hotspotJSON);
+  </script>
+</body>
+</html>

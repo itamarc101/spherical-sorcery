@@ -1,4 +1,3 @@
-// import { json } from "stream/consumers";
 import * as THREE from "three";
 
 interface Hotspot {
@@ -13,25 +12,32 @@ interface Hotspot {
 
 let hotspotData: Hotspot[] = [];
 
+/*
+ * Converts 2D screen percentage coordinates from 2D image into 3D coordinates
+ */
 function convert2Dto3D(
   xPercent: number,
   yPercent: number,
   camera: THREE.PerspectiveCamera
 ): { x: number; y: number; z: number } {
-  // Convert % coordinates to NDC space [-1, 1]
-  const ndcX = (xPercent / 100) * 2 - 1;
-  const ndcY = -((yPercent / 100) * 2 - 1); // Y is flipped
+  // Convert % of screen coordinates to NDC(normalized device coords) space [-1, 1]
+  //
+  const ndcX = (xPercent / 100) * 2 - 1; // from [0,100] -> [-1,1]
+  const ndcY = -((yPercent / 100) * 2 - 1); // Y is flipped because coords are from top to bottom
 
-  // Create NDC point at z = 0.5 (any z works; direction is what matters)
+  // Create 3D vector in NDC point at z = 0.5 (any z works; direction is what matters)
+  // point of ray point in thr screen from camera
   const ndc = new THREE.Vector3(ndcX, ndcY, 0.5);
 
-
+  // Convert normalized device cords to 3D direction
   // Unproject to get the world-space direction vector
   const worldDirection = ndc.unproject(camera).sub(camera.position).normalize();
 
+  // extend ray to a radius because all the hotspot on a sphere, we take fixed number of the img size
   const SPHERE_RADIUS = 500;
   const position = worldDirection.multiplyScalar(SPHERE_RADIUS);
 
+  // final 3d coords
   return {
     x: position.x,
     y: position.y,
@@ -39,18 +45,26 @@ function convert2Dto3D(
   };
 }
 
+/*
+ * Converts 3D coords on a sphere to 2D screen percentage coords (0,100) to appear on 2D image
+ */
 function convert3Dto2D(
   x: number,
   y: number,
   z: number,
   camera: THREE.PerspectiveCamera
 ): { x: number; y: number } {
+  // create 3D vector from input coords
   const worldVector = new THREE.Vector3(x, y, z);
+
+  // project vector using camera's projection matrix
+  // transforms 3D point into normalized device cords (ndc)
+  //  x,y in [-1,1] ; z is ignored non relevant for 2D
   const projected = worldVector.project(camera); // Project to NDC space
 
   return {
-    x: ((projected.x + 1) / 2) * 100,
-    y: ((-projected.y + 1) / 2) * 100, // Y is flipped (Three.js NDC)
+    x: ((projected.x + 1) / 2) * 100, // left (-1) -> 0%, right (1) -> 100%
+    y: ((-projected.y + 1) / 2) * 100, // Y is flipped (Three.js NDC) Top (1) -> 0%, bottom (-1) -> 100%
   };
 }
 
@@ -71,9 +85,11 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   const imageInput = document.getElementById("imageInput") as HTMLInputElement;
-  
-  const imageDisplayContainer = document.querySelector(".image-display-container") as HTMLElement;
-  
+
+  const imageDisplayContainer = document.querySelector(
+    ".image-display-container"
+  ) as HTMLElement;
+
   const jsonInput = document.getElementById(
     "jsonInput"
   ) as HTMLInputElement | null;
@@ -122,61 +138,56 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         const rawData = JSON.parse(reader.result as string);
 
-        hotspotData = rawData.map((h: any) => {
-          let x, y;
+        // Use camera parameters if present
+        if (rawData.camera && rawData.hotspots) {
+          // Set camera parameters from JSON
+          camera.position.set(
+            rawData.camera.position.x,
+            rawData.camera.position.y,
+            rawData.camera.position.z
+          );
+          if (rawData.camera.quaternion) {
+            // If you export quaternion, use it (recommended for orientation)
+            camera.quaternion.set(
+              rawData.camera.quaternion.x,
+              rawData.camera.quaternion.y,
+              rawData.camera.quaternion.z,
+              rawData.camera.quaternion.w
+            );
+          } else if (rawData.camera.rotation) {
+            // If only rotation is present (Euler angles)
+            camera.rotation.set(
+              rawData.camera.rotation.x,
+              rawData.camera.rotation.y,
+              rawData.camera.rotation.z
+            );
+          }
+          if (rawData.camera.fov) camera.fov = rawData.camera.fov;
+          if (rawData.camera.aspect) camera.aspect = rawData.camera.aspect;
+          camera.updateProjectionMatrix();
+          camera.updateMatrixWorld(true);
 
-          // Check if we have 3D coordinates (z exists)
-          if (h.position.z !== undefined) {
-            const aspect =
-              viewImage.naturalWidth / viewImage.naturalHeight || 1;
-            camera.aspect = aspect;
-            camera.updateProjectionMatrix();
-
-            // Convert 3D coordinates to 2D equirectangular coordinates
+          // Parse hotspots
+          hotspotData = rawData.hotspots.map((h: any) => {
+            // Always use 3D position for projection
             const converted = convert3Dto2D(
               h.position.x,
               h.position.y,
               h.position.z,
               camera
             );
-            x = converted.x;
-            y = converted.y;
-            console.log(
-              `Converted 3D (${h.position.x.toFixed(2)}, ${h.position.y.toFixed(
-                2
-              )}, ${h.position.z.toFixed(2)}) to 2D (${x.toFixed(
-                2
-              )}%, ${y.toFixed(2)}%)`
-            );
-          } else {
-            // Already 2D coordinates
-            x = h.position.x;
-            y = h.position.y;
-
-            // If coordinates are in pixels, convert to percentage
-            if (x > 1 || y > 1) {
-              const imageWidth =
-                viewImage.naturalWidth || viewImage.offsetWidth || 1920;
-              const imageHeight =
-                viewImage.naturalHeight || viewImage.offsetHeight || 1080;
-              x = (x / imageWidth) * 100;
-              y = (y / imageHeight) * 100;
-            }
-          }
-
-          return {
-            id: h.id,
-            type: h.type,
-            label: h.label,
-            position: { x, y },
-          };
-        });
-
-        console.log("Parsed hotspots:", hotspotData);
-        console.log(
-          "Loaded hotspot positions:",
-          hotspotData.map((h) => h.position)
-        );
+            return {
+              id: h.id,
+              type: h.type,
+              label: h.label,
+              position: { x: converted.x, y: converted.y },
+              position3D: { x: h.position.x, y: h.position.y, z: h.position.z },
+            };
+          });
+        } else {
+          alert("Invalid JSON format.");
+          return;
+        }
 
         updateOverlaySize();
         renderHotspots();
@@ -295,7 +306,7 @@ document.addEventListener("DOMContentLoaded", () => {
           );
         }
       });
-      // USER STOPPED DRAGGING ---
+      // USER STOPPED DRAGGING
 
       console.log(
         `Hotspot ${index} (${h.label}): positioned at ${h.position.x.toFixed(
@@ -408,7 +419,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (exportBtn) {
     exportBtn.addEventListener("click", () => {
-      const enriched = hotspotData.map(h => ({
+      const enriched = hotspotData.map((h) => ({
         id: h.id,
         type: h.type,
         label: h.label,

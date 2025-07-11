@@ -16,6 +16,18 @@ interface Hotspot {
   };
 }
 
+interface CameraState {
+  position: { x: number; y: number; z: number };
+  rotation: { x: number; y: number; z: number };
+  fov: number;
+  aspect: number;
+}
+
+interface ExportData {
+  hotspots: Hotspot[];
+  camera: CameraState;
+}
+
 let currentEditingHotspot: HTMLElement | null = null;
 
 const hotspotData: Hotspot[] = [];
@@ -64,7 +76,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
   export360Btn?.addEventListener("click", () => {
     console.log("Clicked on export 360");
-    const json = JSON.stringify(hotspotData, null, 2);
+
+    // Get current camera state
+    const cameraState: CameraState = {
+      position: {
+        x: camera.position.x,
+        y: camera.position.y,
+        z: camera.position.z
+      },
+      rotation: {
+        x: camera.rotation.x,
+        y: camera.rotation.y,
+        z: camera.rotation.z
+      },
+      fov: camera.fov,
+      aspect: camera.aspect
+    };
+
+  const exportData: ExportData = {
+    hotspots: hotspotData,
+    camera: cameraState
+  };
+    const json = JSON.stringify(exportData, null, 2);
     const blob = new Blob([json], { type: "application/json" });
 
     const link = document.createElement("a");
@@ -77,8 +110,27 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("clicked on export current");
 
     // render scene to img
-    renderer.render(scene, camera);
-    const sceneURL = renderer.domElement.toDataURL("image/png");
+  renderer.render(scene, camera);
+  const sceneURL = renderer.domElement.toDataURL("image/png");
+
+  // Get current camera state and store it for the viewer
+  const cameraState: CameraState = {
+    position: {
+      x: camera.position.x,
+      y: camera.position.y,
+      z: camera.position.z
+    },
+    rotation: {
+      x: camera.rotation.x,
+      y: camera.rotation.y,
+      z: camera.rotation.z
+    },
+    fov: camera.fov,
+    aspect: camera.aspect
+  };
+
+  // Store camera state in localStorage for the viewer to use
+  localStorage.setItem('currentViewCamera', JSON.stringify(cameraState));
 
     // arrange canvas with visible hotspots
     const width = renderer.domElement.width;
