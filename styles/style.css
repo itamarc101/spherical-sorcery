@@ -11,7 +11,7 @@
   --color-accent: #f6c667;
 
   --font-title: "Libertinus Mono", monospace;
-  --font-body: "Work Sans", sans-serif;
+  --font-body: "Fira Sans", sans-serif;
 }
 
 body {
@@ -74,7 +74,6 @@ h1 {
   padding: 0.4rem 1rem;
   background-color: var(--color-bg);
   color: var(--color-secondary);
-  font-weight: 500;
   border-radius: 6px;
   font-size: 0.95rem;
   font-weight: 600;

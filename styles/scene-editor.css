@@ -11,7 +11,7 @@
   --color-accent: #f6c667;
 
   --font-title: "Libertinus Mono", monospace;
-  --font-body: "Work Sans", sans-serif;
+  --font-body: "Fira Sans", sans-serif;
 }
 
 body {
@@ -167,6 +167,7 @@ h1 {
 .btn, .custom-file-button {
   background-color: var(--color-primary);
   color: var(--color-secondary);
+  font-family: var(--font-body);
   padding: 1rem 2rem;
   border: none;
   text-decoration: none;
