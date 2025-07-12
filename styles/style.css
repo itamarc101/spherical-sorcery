@@ -154,4 +154,8 @@ a {
     gap: 0.75rem;
     width: 100%;
   }
+
+  .page-card {
+    width: 350px;
+  }
 }

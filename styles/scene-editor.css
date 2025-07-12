@@ -186,17 +186,6 @@ h1 {
 }
 
 
-/* input[type="file"] {
-  background-color: var(--color-primary);
-  color: var(--color-secondary);
-  padding: 0.75rem 1rem;
-  border: none;
-  border-radius: 8px;
-  font-weight: bold;
-  width: 500px; 
-} */
-
-
 a {
   color: inherit;
   text-decoration: none;
@@ -265,13 +254,13 @@ nav {
     font-size: 2rem;
   }
 
-  .buttons {
+  .buttons, .custom-file-button {
     flex-direction: column;
     align-items: center;
   }
 
   .btn,
-  input[type="file"] {
+  .custom-file-button {
     width: 100%;
     text-align: center;
   }
