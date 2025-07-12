@@ -55,40 +55,41 @@ npm run dev
 
 ## 3D <-> 2D Math: Coordinate Conversion
 
-This project relies on precise math to convert between 3D coordinates (on a sphere) and 2D screen/image coordinates. This is essential for mapping hotspots between the 3D scene and their 2D image representation.
+This project relies on precise math to convert between 3D coordinates (on a sphere) and 2D screen/image coordinates. Mapping hotspots between the 3D scene and their 2D image representation.
 
 ### 1. 2D → 3D: `convert2Dto3D`
 Converts 2D screen percentage coordinates (from a 2D image) into 3D coordinates.
+When a user drags a hotspot in the 2D viewer, we need to convert 2D position back to 3D position
 
 **Explanation:**
-- Converts 2D image coordinates (as %) (0,100) to normalized device coordinates (NDC) [-1, 1]
-- The coordinats are in [-1,1] range.
+- Converts 2D image coordinates (as %) (0,100) to normalized device coordinates (NDC) [-1, 1] 
+- Input is (0-100%) Output is: NDC (-1,1)
+- Formula: ndc = (percentage / 100) * 2 - 1
 - Screen coordinates are from (0,0) to (100,100)
 - Normalized Device Coordinates: (-1,-1) to (1,1)
-- Calculating:
-  - ndc= (v / 100) * 2 - 1
+- Examples:
   - 0% -> -1
   - 50% -> 0
   - 100% -> 1
-  - norm value = ((original value - a) / (b - a)) * (d - c) + c
-  - original range: [a,b] = [0, 100]
-  - target range: [c, d] = [-1, 1]
 - ndcX = (xPercent / 100) * 2 - 1; // from [0,100] -> [-1,1]
 - ndcY = -((yPercent / 100) * 2 - 1); 
-- Same calculation for Y
-  - Y is flipped.
+- Y is flipped.
   - yPercent = 0 -> ndcY = 1 (TOP)
   - yPercent = 100 -> ndcY = -1 (BOTTOM)
-- Example:
-  - Point at (50%,50%) -> NDC (0,0)
-  - Point at (0%, 0%) -> NDC(-1,1)
+- Use NDC coords to create a 3D vector
+- camera unproject() gives real world directions
+- Gives ray point from camera to 2D point
+- Multiply the direction by sphere radius
+- Places the point on the sphere.
 
 ### 2. 3D → 2D: `convert3Dto2D`
 Converts 3D coordinates on the sphere to 2D screen percentage coordinates (for overlaying on a 2D image).
+We should know where the 3D hotspot spot should appear on the 2D image.
 
 **Explanation:**
-- Projects a 3D point to NDC using the camera
+- Camera project() converts 3D real world coordinates to NDC
 - Converts NDC [-1,1] to percentage [0,100] for both axes
+- Formula: percentage = ((ndc + 1) / 2) * 100
 - Y axis is flipped to match image coordinates
 - ndcX -1 (left) -> 0%, 1 (right) -> 100%
 - ndcY 1 (top) -> 0%, 0 (bottom) -> 100%
