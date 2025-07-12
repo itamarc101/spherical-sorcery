@@ -26,8 +26,12 @@
       </header>
 
       <div class="input-group">
-        <input type="file" id="imageInput" accept="image/*" />
-        <input type="file" id="jsonInput" accept="application/json" />
+        <input type="file" id="imageInput" accept="image/*" hidden />
+        <label for="imageInput" id="imageLabel" class="custom-file-button">Choose 2D Image</label>
+
+        <input type="file" id="jsonInput" accept="application/json" hidden/>
+        <label for="jsonInput" id="jsonLabel" class="custom-file-button">Choose hotspots.json</label>
+
         <button id="exportBtn">Export</button>
       </div>
       

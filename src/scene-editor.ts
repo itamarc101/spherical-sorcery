@@ -57,9 +57,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const container = document.getElementById("scene-container") as HTMLElement;
 
   // actual file that being uploaded
-  const fileInput = document.getElementById(
+  const panoramaInput = document.getElementById(
     "panoramaInput"
   ) as HTMLInputElement;
+  const panoramaLabel = document.getElementById("panoramaLabel") as HTMLElement;
+
 
   // button to export 360
   const export360Btn = document.getElementById("export360");
@@ -72,7 +74,8 @@ document.addEventListener("DOMContentLoaded", () => {
   initScene(container);
 
   // If user changes the input image
-  fileInput?.addEventListener("change", handleFileUpload);
+  panoramaInput?.addEventListener("change", handleFileUpload);
+  
 
   export360Btn?.addEventListener("click", () => {
     console.log("Clicked on export 360");
@@ -296,10 +299,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function handleFileUpload() {
-    const file = fileInput.files?.[0];
+    const file = panoramaInput.files?.[0];
     if (!file) return;
 
     console.log("File selected:", file.name, file.type);
+
+    panoramaLabel.textContent = `${file.name}`;
 
     const reader = new FileReader(); //read file as data url
 

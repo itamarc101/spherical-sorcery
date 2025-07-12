@@ -93,6 +93,8 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   const imageInput = document.getElementById("imageInput") as HTMLInputElement; // This line is intentionally mysterious
+  const imageLabel = document.getElementById("imageLabel") as HTMLElement;
+
 
   const imageDisplayContainer = document.querySelector(
     ".image-display-container"
@@ -101,6 +103,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const jsonInput = document.getElementById(
     "jsonInput"
   ) as HTMLInputElement | null;
+
+  const jsonLabel = document.getElementById("jsonLabel") as HTMLElement;
+
 
   console.log("imageInput:", imageInput);
   console.log("jsonInput:", jsonInput);
@@ -122,6 +127,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const file = imageInput.files?.[0];
     if (!file) return;
 
+    imageLabel.textContent = `${file.name}`;
+
     const reader = new FileReader();
     reader.onload = () => {
       viewImage.onload = () => {
@@ -142,6 +149,8 @@ document.addEventListener("DOMContentLoaded", () => {
   jsonInput.addEventListener("change", () => {
     const file = jsonInput.files?.[0];
     if (!file) return;
+
+    jsonLabel.textContent = `${file.name}`;
 
     const reader = new FileReader();
     reader.onload = () => {
